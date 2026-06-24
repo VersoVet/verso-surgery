@@ -1,0 +1,27 @@
+{
+  "core": {
+    "name": "verso-surgery",
+    "type": "python",
+    "description": "Gestion chirurgies vétérinaires — calcul doses anesthésiques, suivi protocoles, ordonnances ERP",
+    "brain_area": "prefrontal",
+    "routing": {
+      "port": 8112
+    }
+  },
+  "forge": {
+    "type": "python"
+  },
+  "heart": {
+    "deployment": {
+      "target_host": "10.0.0.13"
+    },
+    "lifecycle": {
+      "run_mode": "service",
+      "start_command": "/opt/onyx/venv/bin/python -m src.main"
+    },
+    "systemd": {
+      "service_name": "verso-surgery",
+      "exec_start": "/opt/onyx/venv/bin/python -m src.main"
+    }
+  }
+}
