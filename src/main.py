@@ -84,6 +84,13 @@ async def lifespan(app: FastAPI) -> Any:
 
     logger.info("Starting verso-surgery service...")
 
+    # Signaler au dashboard que le service démarre
+    if client:
+        try:
+            await client.start()
+        except Exception as e:
+            logger.warning(f"OnyxClient start failed: {e}")
+
     # Attendre les dépendances
     if not await wait_for_dependency("protocols", check_protocols):
         logger.error("Failed to load protocols")
@@ -95,6 +102,14 @@ async def lifespan(app: FastAPI) -> Any:
     yield
 
     logger.info("Shutting down verso-surgery service...")
+
+    # Signaler au dashboard que le service s'arrête
+    if client:
+        try:
+            await client.stop()
+        except Exception as e:
+            logger.warning(f"OnyxClient stop failed: {e}")
+
     _service_ready = False
 
 
@@ -107,6 +122,8 @@ app = FastAPI(
 )
 
 # Initialiser OnyxClient pour la visibilité sur le dashboard
+client: OnyxClient | None = None
+
 try:
     client = OnyxClient(skill_name="verso-surgery")
 except Exception as e:
