@@ -16,9 +16,7 @@
     "development": {
       "python_version": "3.12",
       "style_guide": "ruff",
-      "test_framework": "pytest",
-      "dev_platform": "vm",
-      "test_platform": "vm"
+      "test_framework": "pytest"
     }
   },
   "heart": {
