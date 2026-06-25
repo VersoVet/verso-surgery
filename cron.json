@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    {
+      "id": "daily-health-check",
+      "name": "Daily Health Check",
+      "description": "Verify verso-surgery service is running and healthy",
+      "schedule": "0 9 * * *",
+      "command": {
+        "type": "endpoint",
+        "endpoint": "/health",
+        "method": "GET"
+      },
+      "timeout_seconds": 60,
+      "enabled": true,
+      "notify_on_failure": true
+    }
+  ]
+}

@@ -300,6 +300,75 @@ async def send_notification(subject: str, body: str):
 
 ---
 
+## Tâches Cron (Configuration Optionnelle)
+
+Si votre skill doit effectuer des opérations automatisées (monitoring, cleanup, rapports), définissez-les dans `cron.json`.
+
+### Configuration via cron.json
+
+**Fichier**: `cron.json` (optionnel - ignoré si absent)
+
+**Trois types de commandes**:
+
+1. **HTTP Endpoint** - Appelle un endpoint de votre skill
+   ```json
+   {
+     "type": "endpoint",
+     "endpoint": "/health",
+     "method": "GET"
+   }
+   ```
+
+2. **Script Python** - Exécute un script dans votre répertoire skill
+   ```json
+   {
+     "type": "script",
+     "script": "scripts/backup.py"
+   }
+   ```
+
+3. **Commande Shell** - Exécute une commande bash
+   ```json
+   {
+     "type": "command",
+     "command": "curl http://metrics/report"
+   }
+   ```
+
+### Exemple complet
+
+```json
+{
+  "tasks": [
+    {
+      "id": "health-check",
+      "name": "Hourly Health Check",
+      "description": "Verify skill health",
+      "schedule": "0 * * * *",
+      "command": {
+        "type": "endpoint",
+        "endpoint": "/health",
+        "method": "GET"
+      },
+      "timeout_seconds": 60,
+      "enabled": true,
+      "notify_on_failure": true
+    }
+  ]
+}
+```
+
+### Validation & Déploiement
+
+- **Phase 13 (Validation)**: Valide syntaxe et structure de `cron.json`
+- **Optionnel**: Pas d'erreur si manquant; validator suggère au développeur
+- **Déploiement**: Installe les tâches cron sur la machine cible
+- **Cleanup**: Supprime les anciennes tâches avant d'installer les nouvelles
+
+Voir `cron.json.example` pour un template complet avec tous les champs.
+
+---
+
 ## Fichiers de Documentation
 
 | Fichier | Contenu | Màj quand | Vérifié par |
@@ -318,7 +387,7 @@ async def send_notification(subject: str, body: str):
 | **Nom** | verso-surgery |
 | **Type** | python |
 | **Port** | 8112 |
-| **Brain Area** | thalamus |
+| **Brain Area** | prefrontal |
 | **Target** | 10.0.0.13 |
 
 ---
@@ -512,6 +581,57 @@ pytest --cov=src --cov-report=term-missing
 # Tests parallèles (si pytest-xdist installé)
 pytest -n auto
 ```
+
+---
+
+## Garde-fous Résilience et Mémoire
+
+### Démarrage résilient (RECOMMANDÉ)
+Les dépendances externes (Redis, Vault) peuvent ne pas être prêtes au boot de la machine.
+Utiliser `wait_for_dependency()` avec backoff exponentiel dans le lifespan AVANT `onyx.start()`.
+
+```python
+async def wait_for_dependency(name: str, check, *, retries: int = 5, base_delay: float = 1.0, max_delay: float = 30.0) -> bool:
+    for attempt in range(retries):
+        try:
+            if await check():
+                return True
+        except Exception:
+            pass
+        await asyncio.sleep(min(base_delay * (2 ** attempt), max_delay))
+    return False
+```
+
+En cas d'échec : log ERROR clair, laisser systemd réessayer (RestartSteps avec backoff).
+NE PAS boucler indéfiniment en interne (masque l'état du service).
+
+### Logging structuré (OBLIGATOIRE)
+```python
+import logging
+logger = logging.getLogger("mon-skill")
+# PAS de print() pour les messages de démarrage/erreur
+```
+
+### Endpoint /ready (RECOMMANDÉ)
+```python
+@app.get("/ready")
+async def ready():
+    if not deps_ready:
+        return {"status": "not_ready"}
+    return {"status": "ready"}
+```
+
+### Limites mémoire (manifest)
+Forge applique automatiquement des limites systemd. Pour les skills gourmands :
+```json
+"heart": {
+  "resources": {
+    "memory_high": "4G",
+    "memory_max": "6G"
+  }
+}
+```
+Défauts : MemoryHigh=1536M, MemoryMax=2G.
 
 ---
 

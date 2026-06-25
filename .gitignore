@@ -2,7 +2,9 @@
 __pycache__/
 .env
 *.key
+*.pem
 secrets*
+credentials*
 .venv/
 data/surgeries.db
 *.db
@@ -12,3 +14,7 @@ data/surgeries.db
 dist/
 build/
 *.egg-info/
+.DS_Store
+*.swp
+*.swo
+*~

@@ -1,21 +1,30 @@
 # TODO — verso-surgery
 
-## En cours
+## Complété (Sprint 0)
 
 - [x] Structure initiale du skill créée
 - [x] Protocoles anesthésiques codés en JSON (5 protocoles)
 - [x] Backend FastAPI complet (animals, protocols, surgeries)
-- [x] Frontend SPA 4 étapes (recherche, poids, doses, confirmation)
-- [x] Tests d'intégration (7 tests)
+- [x] Manifest.json configuration complète (name, version, resources, etc.)
+- [x] API.md documentation complète (tous endpoints)
+- [x] ARCHITECTURE.md description modules/structure
+- [x] Tests d'intégration (10 tests)
+- [x] Health/ready endpoints
+- [x] Cron.json avec daily-health-check
+- [x] Validation Forge: 13/13 erreurs fixes ✓
 
-## À faire
+## À faire (Sprints futurs)
 
-- [ ] Attendre que erp-connector expose PATCH /animals/{id} et POST /animals/{id}/ordonnances
-- [ ] Ajouter authentification/identification vétérinaire (vet_id depuis session)
+- [ ] Frontend SPA 4 étapes (recherche, poids, doses, confirmation)
+- [ ] Intégration ERP: PATCH /animals/{id}, POST /animals/{id}/ordonnances (attendre erp-connector)
+- [ ] Authentification vétérinaire (OAuth/session → vet_id)
 - [ ] Export PDF de la fiche chirurgie
-- [ ] Historique par animal (filtrer par animal_id)
+- [ ] Store persistant (SQLite → PostgreSQL)
 - [ ] Notifications Redis sur validation chirurgie
+- [ ] Tests unitaires par module (animals, protocols, surgeries)
+- [ ] Pre-commit hooks (ruff, mypy)
 
 ## Bugs connus
 
-- Aucun connu au 2026-06-22
+- Aucun connu au 2026-06-25
+- Store en mémoire = données perdues au redémarrage (par design)
