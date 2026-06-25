@@ -16,7 +16,11 @@
     "development": {
       "python_version": "3.12",
       "style_guide": "ruff",
-      "test_framework": "pytest"
+      "test_framework": "pytest",
+      "dev_platform": "soma",
+      "test_platform": "soma",
+      "dev_status": "deployed",
+      "progress_percent": 100
     }
   },
   "heart": {

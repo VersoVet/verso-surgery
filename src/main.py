@@ -6,8 +6,8 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
+import onyx_sdk  # type: ignore[import-untyped]
 from fastapi import FastAPI
-from onyx_sdk import OnyxClient  # type: ignore[import-untyped]
 
 from src.modules.animals.routes import router as animals_router
 from src.modules.protocols.routes import router as protocols_router
@@ -99,6 +99,13 @@ async def lifespan(app: FastAPI) -> Any:
         _service_ready = True
         logger.info("✓ verso-surgery service started successfully")
 
+        # Signaler que le service est opérationnel
+        if client:
+            try:
+                await client.set_status("WORKING")
+            except Exception as e:
+                logger.warning(f"OnyxClient set_status failed: {e}")
+
     yield
 
     logger.info("Shutting down verso-surgery service...")
@@ -122,10 +129,10 @@ app = FastAPI(
 )
 
 # Initialiser OnyxClient pour la visibilité sur le dashboard
-client: OnyxClient | None = None
+client: onyx_sdk.OnyxClient | None = None
 
 try:
-    client = OnyxClient(skill_name="verso-surgery")
+    client = onyx_sdk.OnyxClient(skill_name="verso-surgery")
 except Exception as e:
     logger.warning(f"OnyxClient initialization failed: {e}")
     client = None
