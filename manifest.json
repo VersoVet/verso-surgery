@@ -16,7 +16,9 @@
     "development": {
       "python_version": "3.12",
       "style_guide": "ruff",
-      "test_framework": "pytest"
+      "test_framework": "pytest",
+      "dev_platform": "baremetal",
+      "test_platform": "baremetal"
     }
   },
   "heart": {
