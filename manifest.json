@@ -23,7 +23,7 @@
   },
   "heart": {
     "deployment": {
-      "target_host": "10.0.0.13",
+      "target_host": "10.0.0.44",
       "platform": "linux"
     },
     "lifecycle": {
