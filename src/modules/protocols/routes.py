@@ -46,9 +46,7 @@ async def get_protocols_by_species(species: str) -> list[Protocol]:
 
 
 @router.post("/doses/{protocol_id}")
-async def calculate_protocol_doses(
-    protocol_id: str, weight_kg: float
-) -> dict[str, Any]:
+async def calculate_protocol_doses(protocol_id: str, weight_kg: float) -> dict[str, Any]:
     """Calcule les doses pour un protocole et poids.
 
     Args:

@@ -1,4 +1,6 @@
 {
+  "name": "verso-surgery",
+  "version": "0.1.0",
   "core": {
     "name": "verso-surgery",
     "type": "python",
@@ -14,7 +16,9 @@
     "development": {
       "python_version": "3.12",
       "style_guide": "ruff",
-      "test_framework": "pytest"
+      "test_framework": "pytest",
+      "dev_platform": "docker",
+      "test_platform": "docker"
     }
   },
   "heart": {

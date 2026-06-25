@@ -56,9 +56,7 @@ class ProtocolService:
         return [p for p in protocols if species in p.species]
 
     @classmethod
-    def calculate_dose(
-        cls, protocol_id: str, weight_kg: float
-    ) -> dict[str, Any] | None:
+    def calculate_dose(cls, protocol_id: str, weight_kg: float) -> dict[str, Any] | None:
         """Calcule les doses pour un protocole et poids.
 
         Args:

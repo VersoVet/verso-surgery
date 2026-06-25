@@ -2,10 +2,12 @@
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from fastapi import FastAPI
+from onyx_sdk import OnyxClient  # type: ignore[import-untyped]
 
 from src.modules.animals.routes import router as animals_router
 from src.modules.protocols.routes import router as protocols_router
@@ -103,6 +105,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Initialiser OnyxClient pour la visibilité sur le dashboard
+try:
+    client = OnyxClient(skill_name="verso-surgery")
+except Exception as e:
+    logger.warning(f"OnyxClient initialization failed: {e}")
+    client = None
 
 # Inclure les routers
 app.include_router(protocols_router)
