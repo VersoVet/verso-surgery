@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI) -> Any:
 app = FastAPI(
     title="Verso Surgery",
     description="Gestion des chirurgies vétérinaires — calcul doses anesthésiques",
-    version="0.1.8",
+    version="0.1.9",
     lifespan=lifespan,
 )
 
