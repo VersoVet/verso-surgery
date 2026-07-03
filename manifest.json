@@ -1,6 +1,6 @@
 {
   "name": "verso-surgery",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "core": {
     "name": "verso-surgery",
     "type": "python",
