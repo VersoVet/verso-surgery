@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI) -> Any:
 app = FastAPI(
     title="Verso Surgery",
     description="Gestion des chirurgies vétérinaires — calcul doses anesthésiques",
-    version="0.1.0",
+    version="0.1.8",
     lifespan=lifespan,
 )
 
@@ -153,7 +153,7 @@ async def health() -> dict[str, Any]:
     return {
         "status": "healthy" if _service_ready else "degraded",
         "service": "verso-surgery",
-        "version": "0.1.0",
+        "version": "0.1.8",
     }
 
 
