@@ -12,7 +12,7 @@ Health check du service.
 {
   "status": "healthy",
   "service": "verso-surgery",
-  "version": "0.1.0"
+  "version": "0.1.12"
 }
 ```
 
