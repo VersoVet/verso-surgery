@@ -431,6 +431,84 @@ curl -X PUT "http://10.0.0.13:8112/api/surgeries/surg_001/notes?notes=Animal%20c
 
 ---
 
+## Ordonnances Anesthésiques (intégration erp-connector)
+
+### POST /api/prescriptions/{surgery_id}/validate-stock
+Valide que tous les médicaments d'une ordonnance anesthésique sont disponibles en stock.
+
+**Paramètres**:
+- `surgery_id` (path): ID de la chirurgie
+
+**Exemple**:
+```bash
+curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/validate-stock"
+```
+
+**Réponse** (200):
+```json
+{
+  "valid": true,
+  "message": "Tous les médicaments sont disponibles en stock",
+  "surgery_id": "surg_001",
+  "protocol_id": "mk_standard",
+  "medicines_count": 3
+}
+```
+
+**Erreur** (200 avec valid=false):
+```json
+{
+  "valid": false,
+  "message": "Médicaments non disponibles en stock: Domitor, Imalgène 1000",
+  "surgery_id": "surg_001",
+  "protocol_id": "mk_standard",
+  "medicines_count": 3
+}
+```
+
+### POST /api/prescriptions/{surgery_id}/create-ordonnance
+Crée une ordonnance anesthésique complète via erp-connector.
+
+Automatiquement:
+- Valide que tous les médicaments sont en stock
+- Récupère les IDs des produits depuis le catalogue VetoPartner
+- Crée l'ordonnance avec les lignes anesthésiques
+- L'ordonnance est créée comme "prescription uniquement" (non délivrée)
+
+**Paramètres**:
+- `surgery_id` (path): ID de la chirurgie (avec doses calculées)
+- `animal_id` (query): ID de l'animal (numérique, correspond à l'ID VetoPartner)
+- `veto_id` (query, optionnel): ID du vétérinaire
+- `veto_nom` (query, optionnel): Nom du vétérinaire
+
+**Exemple**:
+```bash
+curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/create-ordonnance?animal_id=42&veto_id=1&veto_nom=Dr%20Martin"
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "ordonnance_id": 12345,
+  "surgery_id": "surg_001",
+  "animal_id": "42",
+  "lignes_count": 3,
+  "validation": "Tous les médicaments sont disponibles en stock"
+}
+```
+
+**Erreur** (200 avec success=false):
+```json
+{
+  "success": false,
+  "error": "Médicaments non disponibles en stock: Domitor",
+  "ordonnance_id": null
+}
+```
+
+---
+
 ## Codes de réponse
 
 - **200 OK**: Requête réussie
@@ -450,7 +528,6 @@ curl -X PUT "http://10.0.0.13:8112/api/surgeries/surg_001/notes?notes=Animal%20c
 
 ## Futurs endpoints
 
-- `PATCH /animals/{id}` ← intégration erp-connector
-- `POST /animals/{id}/ordonnances` ← export ERP
-- `GET /surgeries/{id}/pdf` ← export PDF
-- Redis pubsub sur `surgery:validated`
+- `GET /surgeries/{id}/pdf` ← export PDF anesthésique
+- Redis pubsub sur `surgery:validated` ← notifications
+- `PATCH /animals/{id}` ← sync avec VetoPartner

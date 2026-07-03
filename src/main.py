@@ -10,6 +10,7 @@ import onyx_sdk  # type: ignore[import-untyped]
 from fastapi import FastAPI
 
 from src.modules.animals.routes import router as animals_router
+from src.modules.prescriptions.routes import router as prescriptions_router
 from src.modules.protocols.routes import router as protocols_router
 from src.modules.surgeries.routes import router as surgeries_router
 
@@ -141,6 +142,7 @@ except Exception as e:
 app.include_router(protocols_router)
 app.include_router(animals_router)
 app.include_router(surgeries_router)
+app.include_router(prescriptions_router)
 
 
 @app.get("/health")
@@ -186,6 +188,7 @@ async def root() -> dict[str, Any]:
             "protocols": "/api/protocols",
             "animals": "/api/animals",
             "surgeries": "/api/surgeries",
+            "prescriptions": "/api/prescriptions",
         },
     }
 

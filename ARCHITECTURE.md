@@ -8,9 +8,10 @@ Verso Surgery est un service FastAPI pour la gestion des chirurgies vétérinair
 Client (Frontend/API)
     ↓
 FastAPI (port 8112)
-    ├── /api/protocols → ProtocolService (JSON statique)
-    ├── /api/animals   → AnimalService (store mémoire)
-    └── /api/surgeries → SurgeryService (protocole + doses)
+    ├── /api/protocols      → ProtocolService (JSON statique)
+    ├── /api/animals        → AnimalService (store mémoire)
+    ├── /api/surgeries      → SurgeryService (protocole + doses)
+    └── /api/prescriptions  → PrescriptionService → erp-connector (10.0.0.44:8101)
 ```
 
 ## Structure Modules
@@ -56,6 +57,24 @@ FastAPI (port 8112)
   - `GET /api/surgeries/` — Lister (avec filtre animal_id)
   - `POST /api/surgeries/{id}/validate` — Valider
   - `PUT /api/surgeries/{id}/notes` — Ajouter notes
+
+### 4. **prescriptions** — Ordonnances via erp-connector
+
+- **Service**: `PrescriptionService`
+  - Vérifie disponibilité des médicaments en stock (via erp-connector)
+  - Crée ordonnances anesthésiques dans VetoPartner
+  - Validation stricte: tous les médicaments doivent être en stock
+  - Intégration bidirectionnelle avec erp-connector (10.0.0.44:8101)
+
+- **Routes**:
+  - `POST /api/prescriptions/{surgery_id}/validate-stock` — Valider disponibilité
+  - `POST /api/prescriptions/{surgery_id}/create-ordonnance` — Créer ordonnance
+
+- **Workflow**:
+  1. Créer chirurgie avec doses (via /api/surgeries/)
+  2. Valider stock avant ordonnance (via /validate-stock)
+  3. Créer ordonnance dans VetoPartner (via /create-ordonnance)
+  4. Ordonnance est créée comme "prescription uniquement" (non délivrée)
 
 ## Points d'entrée
 
@@ -114,25 +133,33 @@ FastAPI (port 8112)
   - À remplacer par SQLite/PostgreSQL
   
 - **Auth**: Pas d'authentification
-  - À ajouter: vet_id depuis session
+  - À ajouter: vet_id depuis session JWT
 
-- **Intégration ERP**: Pas implémentée
-  - À faire: PATCH /animals/{id}, POST /animals/{id}/ordonnances vers erp-connector
+- **Ordonnances**: Création en "prescription uniquement"
+  - À faire: mode "délivré" avec déduction du stock
 
 - **Export**: Pas de PDF/export
-  - À faire: générer fiches chirurgie
+  - À faire: générer fiches chirurgie anesthésique
 
 - **Notifications**: Pas de Redis
-  - À faire: publier événements sur chirurgie validée
+  - À faire: publier événements sur prescription créée
+
+## Intégrations implémentées
+
+- ✓ **erp-connector** (10.0.0.44:8101):
+  - Recherche de médicaments en stock (GET /produits)
+  - Création d'ordonnances anesthésiques (POST /animals/{id}/ordonnances)
+  - Validation stricte: tous les médicaments doivent être en stock
 
 ## Tailles de fichiers
 
-- `src/main.py`: ~150 lignes ✓
-- `src/models.py`: ~60 lignes ✓
-- `src/modules/protocols/service.py`: ~75 lignes ✓
-- `src/modules/animals/service.py`: ~60 lignes ✓
-- `src/modules/surgeries/service.py`: ~80 lignes ✓
-- Routes: <50 lignes chacune ✓
+- `src/main.py`: ~175 lignes ✓
+- `src/models.py`: ~65 lignes ✓
+- `src/modules/protocols/service.py`: ~97 lignes ✓
+- `src/modules/animals/service.py`: ~82 lignes ✓
+- `src/modules/surgeries/service.py`: ~110 lignes ✓
+- `src/modules/prescriptions/service.py`: ~172 lignes ✓
+- Routes: <100 lignes chacune ✓
 
 Tous les fichiers Python < 300 lignes (validations Forge).
 

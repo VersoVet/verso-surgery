@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class Animal(BaseModel):
     """Modèle animal."""
 
-    id: str
+    id: str = Field(default="", description="ID de l'animal (défini par la route)")
     name: str
     species: str = Field(..., description="chien ou chat")
     weight_kg: float = Field(..., gt=0, description="Poids en kg")
