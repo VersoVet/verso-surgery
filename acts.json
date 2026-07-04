@@ -1,0 +1,321 @@
+[
+  {
+    "id": "fluoroscopie_sedation",
+    "name": "Fluoroscopie — Sédation",
+    "description": "Imagerie sous sédation avec acquisition temps réel",
+    "icon": "📷",
+    "fields": [
+      {
+        "id": "motif",
+        "label": "Motif de l'examen",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Blessure, luxation..."
+      },
+      {
+        "id": "articulation",
+        "label": "Articulation/Zone examinée",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Carpe, tarse, hanche..."
+      },
+      {
+        "id": "diagnostic",
+        "label": "Diagnostic présomptif",
+        "type": "text",
+        "required": false,
+        "placeholder": "Ex: Fracture, entorse..."
+      },
+      {
+        "id": "findings",
+        "label": "Findings (observations)",
+        "type": "textarea",
+        "required": true,
+        "placeholder": "Décrire les éléments observés à la fluoroscopie..."
+      },
+      {
+        "id": "recommandations",
+        "label": "Recommandations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Suite du traitement, suivi recommandé..."
+      }
+    ]
+  },
+  {
+    "id": "onde_de_choc",
+    "name": "Onde de Choc — Traitement",
+    "description": "Traitement par ondes de choc extracorporelles",
+    "icon": "⚡",
+    "fields": [
+      {
+        "id": "num_seance",
+        "label": "N° de séance",
+        "type": "number",
+        "required": true,
+        "default": 1
+      },
+      {
+        "id": "localisation",
+        "label": "Localisation du traitement",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Épaule, tarse, carpe..."
+      },
+      {
+        "id": "frequence",
+        "label": "Fréquence",
+        "type": "number",
+        "unit": "Hz",
+        "required": true,
+        "placeholder": "Ex: 4"
+      },
+      {
+        "id": "pression",
+        "label": "Pression",
+        "type": "number",
+        "unit": "bar",
+        "required": true,
+        "placeholder": "Ex: 2.5"
+      },
+      {
+        "id": "nb_coups",
+        "label": "Nombre de coups",
+        "type": "number",
+        "required": true,
+        "placeholder": "Ex: 2000"
+      },
+      {
+        "id": "observations",
+        "label": "Observations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Réaction du patient, incidents..."
+      },
+      {
+        "id": "prochaine_seance",
+        "label": "Prochaine séance prévue",
+        "type": "text",
+        "required": false,
+        "placeholder": "Ex: 3 semaines"
+      }
+    ]
+  },
+  {
+    "id": "prp",
+    "name": "PRP — Plasma Riche en Plaquettes",
+    "description": "Injection de plasma riche en plaquettes",
+    "icon": "🩸",
+    "fields": [
+      {
+        "id": "localisation",
+        "label": "Localisation de l'injection",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Tendon suspenseur, articulation..."
+      },
+      {
+        "id": "vol_prelevement",
+        "label": "Volume de prélèvement",
+        "type": "number",
+        "unit": "mL",
+        "required": true,
+        "placeholder": "Ex: 10"
+      },
+      {
+        "id": "vol_prp",
+        "label": "Volume de PRP obtenu",
+        "type": "number",
+        "unit": "mL",
+        "required": true,
+        "placeholder": "Ex: 4"
+      },
+      {
+        "id": "vol_injecte",
+        "label": "Volume injecté",
+        "type": "number",
+        "unit": "mL",
+        "required": true,
+        "placeholder": "Ex: 4"
+      },
+      {
+        "id": "technique",
+        "label": "Technique d'injection",
+        "type": "select",
+        "required": true,
+        "options": [
+          {"value": "echographie", "label": "Échographie"},
+          {"value": "palpation", "label": "Palpation"}
+        ]
+      },
+      {
+        "id": "aiguille",
+        "label": "Type d'aiguille",
+        "type": "text",
+        "required": false,
+        "placeholder": "Ex: 22G, 25G..."
+      },
+      {
+        "id": "observations",
+        "label": "Observations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Déroulement, réaction..."
+      }
+    ]
+  },
+  {
+    "id": "odc_prp",
+    "name": "Onde de Choc + Rinçage + PRP",
+    "description": "Traitement combiné: onde de choc, rinçage et injection PRP",
+    "icon": "⚡🩸",
+    "fields": [
+      {
+        "id": "num_seance",
+        "label": "N° de séance",
+        "type": "number",
+        "required": true,
+        "default": 1
+      },
+      {
+        "id": "articulation",
+        "label": "Articulation traitée",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Carpe, tarse..."
+      },
+      {
+        "id": "frequence",
+        "label": "Fréquence ondes de choc",
+        "type": "number",
+        "unit": "Hz",
+        "required": true,
+        "placeholder": "Ex: 4"
+      },
+      {
+        "id": "pression",
+        "label": "Pression ondes de choc",
+        "type": "number",
+        "unit": "bar",
+        "required": true,
+        "placeholder": "Ex: 2.5"
+      },
+      {
+        "id": "nb_coups",
+        "label": "Nombre de coups",
+        "type": "number",
+        "required": true,
+        "placeholder": "Ex: 2000"
+      },
+      {
+        "id": "vol_rincage",
+        "label": "Volume de rinçage",
+        "type": "number",
+        "unit": "mL",
+        "required": true,
+        "placeholder": "Ex: 100"
+      },
+      {
+        "id": "solution_rincage",
+        "label": "Solution de rinçage",
+        "type": "text",
+        "required": false,
+        "placeholder": "Ex: Sérum physiologique, Lactate Ringer..."
+      },
+      {
+        "id": "vol_prp",
+        "label": "Volume PRP injecté",
+        "type": "number",
+        "unit": "mL",
+        "required": true,
+        "placeholder": "Ex: 3"
+      },
+      {
+        "id": "vol_injecte",
+        "label": "Volume total injecté",
+        "type": "number",
+        "unit": "mL",
+        "required": false,
+        "placeholder": "Ex: 5"
+      },
+      {
+        "id": "observations",
+        "label": "Observations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Réactions, incidents, suivi..."
+      }
+    ]
+  },
+  {
+    "id": "cri",
+    "name": "CRI — Analgésie Hospitalisation",
+    "description": "Infusion continue pour analgésie péri-opératoire",
+    "icon": "💊",
+    "fields": [
+      {
+        "id": "motif_hospit",
+        "label": "Motif d'hospitalisation",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Chirurgie importante, douleur, suivi..."
+      },
+      {
+        "id": "fentanyl_bolus",
+        "label": "Fentanyl — bolus",
+        "type": "number",
+        "unit": "mL",
+        "required": false,
+        "placeholder": "Ex: 0.5"
+      },
+      {
+        "id": "fentanyl_cri",
+        "label": "Fentanyl — CRI",
+        "type": "number",
+        "unit": "mL/h",
+        "required": false,
+        "placeholder": "Ex: 1.5"
+      },
+      {
+        "id": "lidocaine_cri",
+        "label": "Lidocaïne — CRI",
+        "type": "number",
+        "unit": "mL/h",
+        "required": false,
+        "placeholder": "Ex: 2"
+      },
+      {
+        "id": "ketamine_cri",
+        "label": "Kétamine — CRI",
+        "type": "number",
+        "unit": "mL/h",
+        "required": false,
+        "placeholder": "Ex: 1"
+      },
+      {
+        "id": "seringue",
+        "label": "Seringue de perfusion",
+        "type": "select",
+        "required": true,
+        "options": [
+          {"value": "20ml", "label": "20 mL"},
+          {"value": "50ml", "label": "50 mL"}
+        ]
+      },
+      {
+        "id": "duree_hospit",
+        "label": "Durée d'hospitalisation prévue",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: 24h, 48h, 3j..."
+      },
+      {
+        "id": "observations",
+        "label": "Observations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Surveillance, effets, incidents..."
+      }
+    ]
+  }
+]

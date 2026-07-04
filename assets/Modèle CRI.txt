@@ -1,0 +1,10 @@
+Doses basses / moyennes / hautes, seringue de 20ml / 50ml à 10ml / 25ml/h
+- Fentanyl 
+   Bolus : 3µg/kg --> 0.6mL
+   CRI : 3.5µg/kg/h --> 0.7mL
+- Lurocaine
+   Bolus : 3mg/kg --> 1.5mL
+   CRI : 3.15mg/kg/h --> 1.6mL
+- Kétamine
+   Bolus : 0.4mg/kg --> 0.04mL
+   CRI : 0.75mg/kg/h --> 0.08mL

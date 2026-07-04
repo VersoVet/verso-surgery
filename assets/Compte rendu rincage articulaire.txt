@@ -1,0 +1,53 @@
+ Motif de la consultation :  
+[Décrire le motif de la consultation, par exemple : "Boiterie persistante malgré un traitement médical, suspicion d'arthrose évolutive de l'articulation du coude."]  
+
+---
+
+ Anamnèse :  
+- Historique des symptômes : [Description précise des symptômes, durée, facteurs aggravants ou atténuants.]  
+- Traitements antérieurs : [Détail des traitements médicamenteux, chirurgicaux ou physiothérapeutiques reçus.]  
+- Examens complémentaires réalisés :   
+
+---
+
+ Diagnostic établi :  
+[Détail du diagnostic, par exemple : "Arthrose secondaire à une dysplasie de l’articulation concernée. Inflammation synoviale chronique."]  
+
+---
+
+ Protocole thérapeutique appliqué :
+
+ 1. Rinçage articulaire :  
+- Objectif :  
+  Élimination des débris articulaires et réduction de la charge inflammatoire intra-articulaire.  
+- Procédure :  
+  - Préparation du patient sous anesthésie légère ou sédation.  
+  - Antisepsie rigoureuse de la zone articulaire.  
+  - Ponction articulaire et lavage sous pression contrôlée avec [indiquer le type de solution utilisée, ex. sérum physiologique stérile ou Ringer Lactate].  
+  - Volume total injecté et retiré : [Indiquer le volume].  
+
+ 2. Préparation et injection de PRP :  
+- Préparation du PRP :  
+  - Prélevement sanguin : [Indiquer le volume].  
+  - Centrifugation selon le protocole validé (vitesse et durée).  
+  - Volume de PRP obtenu : [Indiquer le volume].  
+- Injection intra-articulaire :  
+  - Technique utilisée : [Ex. guidée par échographie ou palpation directe].  
+  - Volume injecté : [Indiquer le volume].  
+  - Aiguille utilisée : [Indiquer le calibre].  
+  - Suivi des signes cliniques lors de l’injection : [Préciser s'il y a eu douleur, résistance, etc.].  
+
+---
+
+ Recommandations post-procédure :  
+- Repos articulaire : [Durée recommandée, par exemple 7-10 jours].  
+- Physiothérapie : [Indiquer si une rééducation fonctionnelle est conseillée et sous quelle forme].  
+- Traitement complémentaire : [Ex. administration d'anti-inflammatoires, chondroprotecteurs].  
+- Suivi clinique :  
+  - Prochain rendez-vous pour évaluation : [Date].  
+  - Éventuels examens complémentaires prévus : [Indiquer si une imagerie ou un bilan fonctionnel est programmé].  
+
+---
+
+ Pronostic :  
+[Donner un pronostic basé sur la situation clinique et la procédure réalisée.] 

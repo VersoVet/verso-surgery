@@ -47,6 +47,8 @@
   },
   "dashboard": {
     "enabled": true,
+    "page": "/dashboard",
+    "category": "medical",
     "widgets": [
       {
         "type": "health",

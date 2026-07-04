@@ -4,12 +4,16 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 import onyx_sdk  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.modules.animals.routes import router as animals_router
+from src.modules.dashboard.routes import router as dashboard_router
 from src.modules.prescriptions.routes import router as prescriptions_router
 from src.modules.protocols.routes import router as protocols_router
 from src.modules.surgeries.routes import router as surgeries_router
@@ -143,6 +147,23 @@ app.include_router(protocols_router)
 app.include_router(animals_router)
 app.include_router(surgeries_router)
 app.include_router(prescriptions_router)
+app.include_router(dashboard_router)
+
+# Monter les fichiers statiques
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get("/dashboard")
+async def dashboard_page() -> FileResponse:
+    """Retourne la page du dashboard.
+
+    Returns:
+        Page HTML du dashboard.
+    """
+    dashboard_file = Path(__file__).parent.parent / "static" / "index.html"
+    return FileResponse(dashboard_file)
 
 
 @app.get("/health")
