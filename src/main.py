@@ -176,7 +176,7 @@ async def health() -> dict[str, Any]:
     return {
         "status": "healthy" if _service_ready else "degraded",
         "service": "verso-surgery",
-        "version": "0.1.12",
+        "version": "0.1.15",
     }
 
 
