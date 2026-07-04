@@ -74,6 +74,10 @@ class ProtocolService:
         for drug in protocol.drugs:
             dose_mg = drug.dose * weight_kg
             volume_ml = dose_mg / drug.concentration
+            dose_min_mg = drug.dose_min * weight_kg
+            dose_max_mg = drug.dose_max * weight_kg
+            volume_min_ml = dose_min_mg / drug.concentration
+            volume_max_ml = dose_max_mg / drug.concentration
 
             doses.append(
                 {
@@ -81,10 +85,16 @@ class ProtocolService:
                     "commercial_name": drug.commercial,
                     "dose_mg": round(dose_mg, 2),
                     "volume_ml": round(volume_ml, 2),
+                    "dose_min": drug.dose_min,
+                    "dose_max": drug.dose_max,
+                    "volume_min_ml": round(volume_min_ml, 2),
+                    "volume_max_ml": round(volume_max_ml, 2),
                     "route": drug.route,
                     "phase": drug.phase,
                     "concentration": drug.concentration,
                     "unit": drug.unit,
+                    "optional": drug.optional,
+                    "code_central": drug.code_central,
                 }
             )
 

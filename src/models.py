@@ -23,8 +23,12 @@ class Drug(BaseModel):
     unit: str
     dose: float
     dose_unit: str
+    dose_min: float = 0.0
+    dose_max: float = 0.0
     route: str
     phase: str
+    optional: bool = False
+    code_central: str | None = None
 
 
 class Protocol(BaseModel):
@@ -44,8 +48,14 @@ class SurgeryDose(BaseModel):
     commercial_name: str
     dose_mg: float
     volume_ml: float
+    dose_min: float = 0.0
+    dose_max: float = 0.0
+    volume_min_ml: float = 0.0
+    volume_max_ml: float = 0.0
     route: str
     phase: str
+    optional: bool = False
+    code_central: str | None = None
 
 
 class Surgery(BaseModel):
