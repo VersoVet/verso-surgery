@@ -614,7 +614,12 @@
         <div class="step" id="step-3">
             <div class="panel">
                 <h2>💊 Étape 4 — Anesthésie</h2>
-                <div class="protocol-cards" id="protocol-cards"></div>
+                <div id="protocols-loading" style="text-align: center; padding: 20px;">
+                    <p style="color: #6B7280;">
+                        <span class="spinner"></span> Chargement des protocoles...
+                    </p>
+                </div>
+                <div class="protocol-cards" id="protocol-cards" style="display: none;"></div>
                 <div id="doses-section" class="hidden">
                     <h3 style="margin-bottom: 16px;">Doses calculées</h3>
                     <table class="doses-table" id="doses-table"></table>
@@ -842,20 +847,48 @@
         }
 
         async function loadProtocols() {
+            document.getElementById('protocols-loading').style.display = 'block';
+            document.getElementById('protocol-cards').style.display = 'none';
+            document.getElementById('doses-section').classList.add('hidden');
+
             try {
                 const resp = await fetch(`${API_BASE}/protocols/`);
                 const protocols = await resp.json();
-                const filtered = protocols.filter(p =>
-                    state.animal && (!p.species || p.species.includes(state.animal.espece))
-                );
+
+                // Déterminer l'espèce de l'animal
+                const species = state.animal?.espece || state.animal?.species;
+
+                // Filtrer les protocoles par espèce si l'animal est défini
+                let filtered = protocols;
+                if (species) {
+                    filtered = protocols.filter(p =>
+                        !p.species || p.species.includes(species)
+                    );
+                }
+
+                // Si pas de résultat avec le filtre, afficher tous
+                if (filtered.length === 0) {
+                    filtered = protocols;
+                }
+
                 renderProtocolCards(filtered);
+                document.getElementById('protocols-loading').style.display = 'none';
+                document.getElementById('protocol-cards').style.display = 'grid';
             } catch (e) {
                 console.error('Failed to load protocols:', e);
+                document.getElementById('protocols-loading').innerHTML = `
+                    <p style="color: #EF4444;">Erreur lors du chargement des protocoles</p>
+                    <p style="color: #6B7280; font-size: 12px;">${e.message}</p>
+                `;
             }
         }
 
         function renderProtocolCards(protocols) {
             const cards = document.getElementById('protocol-cards');
+            if (!protocols || protocols.length === 0) {
+                cards.innerHTML = '<p style="color: #6B7280; grid-column: 1/-1;">Aucun protocole disponible</p>';
+                return;
+            }
             cards.innerHTML = protocols.map((p, i) => `
                 <div class="protocol-card" onclick="window.selectProtocol(${i}, '${p.id}')">
                     <div class="protocol-name">${p.name}</div>
@@ -866,7 +899,11 @@
 
         window.selectProtocol = async function(index, protocolId) {
             try {
-                const resp = await fetch(`${API_BASE}/protocols/${protocolId}?weight_kg=${state.poids}`, { method: 'POST' });
+                // Essayer le bon endpoint pour calculer les doses
+                const resp = await fetch(`${API_BASE}/protocols/doses/${protocolId}?weight_kg=${state.poids}`, { method: 'POST' });
+                if (!resp.ok) {
+                    throw new Error('Failed to fetch doses');
+                }
                 const data = await resp.json();
                 state.protocol = protocolId;
                 state.doses = data.doses || [];
@@ -877,8 +914,17 @@
                 });
                 renderDosesTable();
                 document.getElementById('doses-section').classList.remove('hidden');
+
+                // Highlight selected protocol card
+                document.querySelectorAll('.protocol-card').forEach((card, i) => {
+                    card.classList.remove('selected');
+                    if (i === index) {
+                        card.classList.add('selected');
+                    }
+                });
             } catch (e) {
                 console.error('Failed to load doses:', e);
+                alert('Erreur lors du calcul des doses. Vérifiez le poids saisi.');
             }
         };
 
