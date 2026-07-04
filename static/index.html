@@ -548,13 +548,17 @@
         <!-- STEP 1: RDV -->
         <div class="step active" id="step-0">
             <div class="panel">
-                <h2>📅 Étape 1 — Rendez-vous du Jour</h2>
-                <div id="rdv-loading" class="hidden">
-                    <p style="text-align: center; color: #6B7280;">
-                        <span class="spinner"></span> Chargement...
-                    </p>
-                </div>
+                <h2>📅 Étape 1 — Rendez-vous</h2>
                 <div id="rdv-content">
+                    <div class="form-group">
+                        <label for="rdv-date">Date des RDV</label>
+                        <input type="date" id="rdv-date" class="search-input" onchange="window.loadRdvForDate()">
+                    </div>
+                    <div id="rdv-loading" class="hidden">
+                        <p style="text-align: center; color: #6B7280;">
+                            <span class="spinner"></span> Chargement...
+                        </p>
+                    </div>
                     <div class="rdv-list" id="rdv-list"></div>
                     <div class="button-group">
                         <button class="btn btn-skip" onclick="window.skipRdv()">Continuer sans RDV</button>
@@ -571,7 +575,7 @@
                     <div class="search-box">
                         <input type="text" class="search-input" id="search-input" placeholder="Rechercher un animal ou propriétaire..." onkeyup="window.debounceSearch()">
                     </div>
-                    <div class="search-results" id="search-results"></div>
+                    <div id="search-results"></div>
                 </div>
                 <div id="patient-details" class="hidden">
                     <div class="animal-fiche" id="animal-fiche"></div>
@@ -658,22 +662,45 @@
             consultationId: null,
             notes: '',
             searchTimeout: null,
+            selectedDate: new Date().toISOString().split('T')[0],
         };
 
         const API_BASE = '/api';
 
-        async function loadRdvToday() {
+        function getDateString(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        window.loadRdvForDate = async function() {
+            const dateInput = document.getElementById('rdv-date').value;
+            if (!dateInput) return;
+            state.selectedDate = dateInput;
             document.getElementById('rdv-loading').classList.remove('hidden');
             try {
                 const resp = await fetch(`${API_BASE}/dashboard/rdv-today`);
                 const data = await resp.json();
-                state.rdv = data.rdv || [];
+                state.rdv = (data.rdv || []).filter(r => {
+                    const rdvDate = r.datetimerdv?.substring(0, 10);
+                    return rdvDate === dateInput;
+                });
                 renderRdvList();
             } catch (e) {
                 console.error('Failed to load RDV:', e);
                 state.rdv = [];
+                renderRdvList();
             }
             document.getElementById('rdv-loading').classList.add('hidden');
+        };
+
+        async function loadRdvToday() {
+            const dateInput = document.getElementById('rdv-date');
+            if (dateInput) {
+                dateInput.value = getDateString(new Date());
+            }
+            await window.loadRdvForDate();
         }
 
         function renderRdvList() {
@@ -759,7 +786,16 @@
             state.erpAnimalId = animalId;
             await loadAnimalDetails();
             renderAnimalDetails();
+            updateButtonState();
         };
+
+        function updateButtonState() {
+            const btn = document.getElementById('btn-next-patient');
+            const weight = parseFloat(document.getElementById('weight-input')?.value || 0);
+            if (btn) {
+                btn.disabled = !state.animal || weight <= 0;
+            }
+        }
 
         function renderAnimalDetails() {
             const details = document.getElementById('patient-details');
@@ -799,6 +835,8 @@
                     </div>
                 `;
                 document.getElementById('weight-input').value = state.animal.poids || '';
+                document.getElementById('weight-input').addEventListener('change', updateButtonState);
+                document.getElementById('weight-input').addEventListener('keyup', updateButtonState);
                 details.classList.remove('hidden');
             }
         }
