@@ -433,47 +433,14 @@ curl -X PUT "http://10.0.0.13:8112/api/surgeries/surg_001/notes?notes=Animal%20c
 
 ## Ordonnances Anesthésiques (intégration erp-connector)
 
-### POST /api/prescriptions/{surgery_id}/validate-stock
-Valide que tous les médicaments d'une ordonnance anesthésique sont disponibles en stock.
-
-**Paramètres**:
-- `surgery_id` (path): ID de la chirurgie
-
-**Exemple**:
-```bash
-curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/validate-stock"
-```
-
-**Réponse** (200):
-```json
-{
-  "valid": true,
-  "message": "Tous les médicaments sont disponibles en stock",
-  "surgery_id": "surg_001",
-  "protocol_id": "mk_standard",
-  "medicines_count": 3
-}
-```
-
-**Erreur** (200 avec valid=false):
-```json
-{
-  "valid": false,
-  "message": "Médicaments non disponibles en stock: Domitor, Imalgène 1000",
-  "surgery_id": "surg_001",
-  "protocol_id": "mk_standard",
-  "medicines_count": 3
-}
-```
-
 ### POST /api/prescriptions/{surgery_id}/create-ordonnance
-Crée une ordonnance anesthésique complète via erp-connector.
+Crée une ordonnance anesthésique dans VetoPartner via erp-connector (v1.8.153+).
 
-Automatiquement:
-- Valide que tous les médicaments sont en stock
-- Récupère les IDs des produits depuis le catalogue VetoPartner
-- Crée l'ordonnance avec les lignes anesthésiques
-- L'ordonnance est créée comme "prescription uniquement" (non délivrée)
+Utilise la nouvelle API erp-connector avec `code_central` et auto-enrichissement:
+- Cherche les codes centraux pour les médicaments
+- Les lignes avec code_central sont créées avec auto-remplissage de `designation` et `CIP`
+- Les lignes sans code_central sont créées comme "hors_stock" avec le nom du médicament
+- `delivered` et autres champs sont auto-définis par erp-connector
 
 **Paramètres**:
 - `surgery_id` (path): ID de la chirurgie (avec doses calculées)
@@ -483,7 +450,7 @@ Automatiquement:
 
 **Exemple**:
 ```bash
-curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/create-ordonnance?animal_id=42&veto_id=1&veto_nom=Dr%20Martin"
+curl -X POST "http://10.0.0.44:8112/api/prescriptions/surg_001/create-ordonnance?animal_id=42&veto_id=1&veto_nom=Dr%20Martin"
 ```
 
 **Réponse** (200):
@@ -494,7 +461,7 @@ curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/create-ordonnance
   "surgery_id": "surg_001",
   "animal_id": "42",
   "lignes_count": 3,
-  "validation": "Tous les médicaments sont disponibles en stock"
+  "message": "Ordonnance créée (3 lignes)"
 }
 ```
 
@@ -502,10 +469,16 @@ curl -X POST "http://10.0.0.13:8112/api/prescriptions/surg_001/create-ordonnance
 ```json
 {
   "success": false,
-  "error": "Médicaments non disponibles en stock: Domitor",
+  "error": "animal_id doit être numérique: abc",
   "ordonnance_id": null
 }
 ```
+
+**Notes**:
+- Les codes centraux sont recherchés automatiquement dans le catalogue VetoPartner
+- Médicaments non trouvés: créés comme "hors_stock" pour permettre édition manuelle dans VetoPartner
+- Ordonnance toujours créée en tant que "prescription uniquement" (type_ordo=1)
+- Voir erp-connector API.md pour détails sur `code_central`, `type_ligne`, auto-enrichissement
 
 ---
 

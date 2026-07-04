@@ -17,14 +17,14 @@ class PrescriptionService:
     TIMEOUT = 30.0
 
     @classmethod
-    async def check_medicine_in_stock(
+    async def search_product_by_code_central(
         cls,
-        medicine_name: str,
+        code_central: str,
     ) -> dict[str, Any] | None:
-        """Vérifie qu'un médicament est disponible en stock.
+        """Recherche un produit par code central.
 
         Args:
-            medicine_name: Nom du médicament à chercher
+            code_central: Code central VetoPartner (ex: "10341")
 
         Returns:
             Dict avec info du produit si trouvé, None sinon.
@@ -33,51 +33,52 @@ class PrescriptionService:
             async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
                 response = await client.get(
                     f"{cls.ERP_BASE_URL}/produits",
-                    params={"search": medicine_name, "limit": 10},
+                    params={"code_central": code_central},
                 )
                 response.raise_for_status()
                 data: Any = response.json()
 
-                # data est une liste de produits
-                if isinstance(data, list) and len(data) > 0:
-                    # Retourner le premier match exact ou fuzzy
-                    for product in data:
-                        product_dict: dict[str, Any] = cast(dict[str, Any], product)
-                        if product_dict.get("designation", "").lower() == medicine_name.lower():
-                            return product_dict
-                    # Si pas de match exact, retourner le premier résultat
-                    return cast(dict[str, Any], data[0])
+                # Récupérer le premier produit si disponible
+                if isinstance(data, dict):
+                    products = data.get("products", [])
+                    if products and len(products) > 0:
+                        return cast(dict[str, Any], products[0])
                 return None
         except Exception as e:
-            logger.warning(f"Stock check failed for {medicine_name}: {e}")
+            logger.warning(f"Product search failed for code {code_central}: {e}")
             return None
 
     @classmethod
-    async def validate_anesthetic_prescription(
+    async def search_product_by_designation(
         cls,
-        surgery: Surgery,
-    ) -> tuple[bool, str]:
-        """Valide qu'une ordonnance anesthésique utilise des médicaments en stock.
+        designation: str,
+    ) -> dict[str, Any] | None:
+        """Recherche un produit par nom/designation.
 
         Args:
-            surgery: Chirurgie avec doses anesthésiques calculées
+            designation: Nom du médicament à chercher
 
         Returns:
-            Tuple (valid, message)
+            Dict avec info du produit si trouvé, None sinon.
         """
-        missing = []
+        try:
+            async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
+                response = await client.get(
+                    f"{cls.ERP_BASE_URL}/produits",
+                    params={"search": designation, "limit": 5},
+                )
+                response.raise_for_status()
+                data: Any = response.json()
 
-        for dose in surgery.doses:
-            # Chercher le médicament dans le stock
-            product = await cls.check_medicine_in_stock(dose.commercial_name)
-            if not product:
-                missing.append(dose.commercial_name)
-
-        if missing:
-            msg = f"Médicaments non disponibles en stock: {', '.join(missing)}"
-            return False, msg
-
-        return True, "Tous les médicaments sont disponibles en stock"
+                # Retourner le premier produit si disponible
+                if isinstance(data, dict):
+                    products = data.get("products", [])
+                    if products and len(products) > 0:
+                        return cast(dict[str, Any], products[0])
+                return None
+        except Exception as e:
+            logger.warning(f"Product search failed for {designation}: {e}")
+            return None
 
     @classmethod
     async def create_ordonnance(
@@ -89,8 +90,11 @@ class PrescriptionService:
     ) -> dict[str, Any]:
         """Crée une ordonnance anesthésique via erp-connector.
 
+        Utilise la nouvelle API erp-connector avec code_central et auto-enrichissement.
+        Les lignes sans code_central sont créées comme "hors_stock" avec designation.
+
         Args:
-            animal_id: ID de l'animal (doit être numérique dans VetoPartner)
+            animal_id: ID de l'animal (numérique dans VetoPartner)
             surgery: Chirurgie avec doses calculées
             veto_id: ID du vétérinaire (optionnel)
             veto_nom: Nom du vétérinaire (optionnel)
@@ -98,38 +102,34 @@ class PrescriptionService:
         Returns:
             Dict avec status et détails de l'ordonnance créée.
         """
-        # Valider les médicaments en stock
-        valid, validation_msg = await cls.validate_anesthetic_prescription(surgery)
-        if not valid:
-            return {
-                "success": False,
-                "error": validation_msg,
-                "ordonnance_id": None,
-            }
-
         # Construire les lignes d'ordonnance
         lignes = []
         for dose in surgery.doses:
-            # Chercher le produit pour obtenir son ID
-            product = await cls.check_medicine_in_stock(dose.commercial_name)
-            idsource = None
-            if product:
-                idsource = product.get("id") or product.get("idsource")
+            # Chercher le produit (optionnel, pour enrichissement)
+            product = await cls.search_product_by_designation(dose.commercial_name)
 
-            ligne = {
-                "designation": dose.commercial_name,
+            # Construire la ligne
+            # Si on trouve un produit avec code_central, l'utiliser
+            # Sinon, utiliser designation avec type hors_stock
+            ligne: dict[str, Any] = {
                 "quantite": 1,
                 "notes": f"{dose.dose_mg:.2f}mg ({dose.volume_ml:.2f}mL) - {dose.route} - {dose.phase}",
-                "delivered": 0,  # Prescription uniquement, pas encore délivré
-                "categorie": "MED",
-                "idsource": idsource,
             }
+
+            if product and product.get("codecentrale"):
+                # Utiliser le code central trouvé
+                ligne["code_central"] = product["codecentrale"]
+            else:
+                # Créer comme hors_stock avec designation
+                ligne["designation"] = dose.commercial_name
+                ligne["type_ligne"] = "hors_stock"
+
             lignes.append(ligne)
 
         # Créer l'ordonnance via erp-connector
         try:
             async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
-                # animal_id doit être numérique pour erp-connector
+                # Valider animal_id numérique
                 try:
                     animal_id_int = int(animal_id)
                 except ValueError:
@@ -152,7 +152,7 @@ class PrescriptionService:
                     json=ordonnance_data,
                 )
                 response.raise_for_status()
-                result = response.json()
+                result: Any = response.json()
 
                 return {
                     "success": True,
@@ -160,12 +160,9 @@ class PrescriptionService:
                     "surgery_id": surgery.id,
                     "animal_id": animal_id,
                     "lignes_count": len(lignes),
-                    "validation": validation_msg,
+                    "message": f"Ordonnance créée ({len(lignes)} lignes)",
                 }
         except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.error(f"Failed to create ordonnance: {e}")
             return {
                 "success": False,

@@ -3,6 +3,7 @@
 import pytest
 
 from src.models import Surgery, SurgeryDose
+from src.modules.prescriptions.service import PrescriptionService
 
 
 @pytest.fixture
@@ -52,3 +53,10 @@ def test_surgery_serialization(sample_surgery: Surgery) -> None:
     assert data["animal_id"] == "42"
     assert isinstance(data["doses"], list)
     assert len(data["doses"]) == 2
+
+
+def test_prescription_service_exists() -> None:
+    """Test que le service prescriptions est disponible."""
+    assert hasattr(PrescriptionService, "create_ordonnance")
+    assert hasattr(PrescriptionService, "search_product_by_code_central")
+    assert hasattr(PrescriptionService, "search_product_by_designation")
