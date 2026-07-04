@@ -533,11 +533,11 @@
             </div>
             <div class="progress-step" id="step-indicator-2">
                 <div class="circle">3</div>
-                <div class="progress-label">Anesthésie</div>
+                <div class="progress-label">Acte</div>
             </div>
             <div class="progress-step" id="step-indicator-3">
                 <div class="circle">4</div>
-                <div class="progress-label">Acte</div>
+                <div class="progress-label">Anesthésie</div>
             </div>
             <div class="progress-step" id="step-indicator-4">
                 <div class="circle">5</div>
@@ -594,10 +594,26 @@
             </div>
         </div>
 
-        <!-- STEP 3: ANESTHÉSIE -->
+        <!-- STEP 3: ACTE CHIRURGICAL -->
         <div class="step" id="step-2">
             <div class="panel">
-                <h2>💊 Étape 3 — Anesthésie</h2>
+                <h2>⚕️ Étape 3 — Acte Chirurgical</h2>
+                <div class="act-cards" id="act-cards"></div>
+                <div id="act-form-section" class="hidden">
+                    <h3 style="margin-bottom: 16px;" id="act-form-title"></h3>
+                    <form id="act-form"></form>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="window.goBack()">Retour</button>
+                    <button class="btn btn-primary" id="btn-next-act" onclick="window.nextStep()" disabled>Continuer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: ANESTHÉSIE -->
+        <div class="step" id="step-3">
+            <div class="panel">
+                <h2>💊 Étape 4 — Anesthésie</h2>
                 <div class="protocol-cards" id="protocol-cards"></div>
                 <div id="doses-section" class="hidden">
                     <h3 style="margin-bottom: 16px;">Doses calculées</h3>
@@ -607,22 +623,6 @@
                         <button class="btn btn-secondary" onclick="window.goBack()">Retour</button>
                         <button class="btn btn-primary" id="btn-next-anesthesia" onclick="window.nextStep()">Continuer</button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- STEP 4: ACTE CHIRURGICAL -->
-        <div class="step" id="step-3">
-            <div class="panel">
-                <h2>⚕️ Étape 4 — Acte Chirurgical</h2>
-                <div class="act-cards" id="act-cards"></div>
-                <div id="act-form-section" class="hidden">
-                    <h3 style="margin-bottom: 16px;" id="act-form-title"></h3>
-                    <form id="act-form"></form>
-                </div>
-                <div class="button-group">
-                    <button class="btn btn-secondary" onclick="window.goBack()">Retour</button>
-                    <button class="btn btn-primary" id="btn-next-act" onclick="window.nextStep()" disabled>Continuer</button>
                 </div>
             </div>
         </div>
@@ -930,8 +930,17 @@
                 const data = await resp.json();
                 state.act = data.acts.find(a => a.id === actId);
                 state.actValues = {};
+
+                // Highlight selected act card
+                document.querySelectorAll('.act-card').forEach((card, i) => {
+                    card.classList.remove('selected');
+                    if (data.acts[i]?.id === actId) {
+                        card.classList.add('selected');
+                    }
+                });
+
+                // Render the form for this act
                 renderActForm();
-                document.getElementById('act-form-section').classList.remove('hidden');
                 document.getElementById('btn-next-act').disabled = false;
             } catch (e) {
                 console.error('Failed to select act:', e);
@@ -940,6 +949,7 @@
 
         function renderActForm() {
             const form = document.getElementById('act-form');
+            const formSection = document.getElementById('act-form-section');
             const title = document.getElementById('act-form-title');
             title.textContent = state.act.name;
 
@@ -959,6 +969,8 @@
 
                 return `<div class="form-group">${label}${input}</div>`;
             }).join('');
+
+            formSection.classList.remove('hidden');
         }
 
         window.updateActValue = function(fieldId, value) {
@@ -967,6 +979,18 @@
 
         function renderRecap() {
             const recap = document.getElementById('recap-content');
+            let actDetailsHtml = '';
+            if (state.act && Object.keys(state.actValues).length > 0) {
+                actDetailsHtml = '<div style="margin-top: 8px;">';
+                state.act.fields.forEach(f => {
+                    const val = state.actValues[f.id];
+                    if (val !== undefined && val !== '' && val !== false) {
+                        actDetailsHtml += `<div class="recap-item">• ${f.label}: ${val}</div>`;
+                    }
+                });
+                actDetailsHtml += '</div>';
+            }
+
             recap.innerHTML = `
                 <div class="recap-section">
                     <div class="recap-title">Patient</div>
@@ -974,12 +998,13 @@
                     <div class="recap-item">⚖️ Poids: ${state.poids} kg</div>
                 </div>
                 <div class="recap-section">
-                    <div class="recap-title">Anesthésie</div>
-                    <div class="recap-item">💊 ${state.protocol}</div>
-                </div>
-                <div class="recap-section">
                     <div class="recap-title">Acte Chirurgical</div>
                     <div class="recap-item">⚕️ ${state.act?.name || 'N/A'}</div>
+                    ${actDetailsHtml}
+                </div>
+                <div class="recap-section">
+                    <div class="recap-title">Anesthésie</div>
+                    <div class="recap-item">💊 ${state.protocol}</div>
                 </div>
             `;
         }
@@ -1036,10 +1061,14 @@
                     return;
                 }
                 state.step = 2;
-                await loadProtocols();
-            } else if (state.step === 2) {
-                state.step = 3;
                 await loadActs();
+            } else if (state.step === 2) {
+                if (!state.act) {
+                    alert('Veuillez sélectionner un acte');
+                    return;
+                }
+                state.step = 3;
+                await loadProtocols();
             } else if (state.step === 3) {
                 state.step = 4;
                 renderRecap();
