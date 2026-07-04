@@ -8,6 +8,8 @@ Verso Surgery est un service FastAPI pour la gestion des chirurgies vétérinair
 Client (Frontend/API)
     ↓
 FastAPI (port 8112)
+    ├── /dashboard          → Static HTML + JavaScript (5-step wizard)
+    ├── /api/dashboard      → DashboardService (proxy erp-connector)
     ├── /api/protocols      → ProtocolService (JSON statique)
     ├── /api/animals        → AnimalService (store mémoire)
     ├── /api/surgeries      → SurgeryService (protocole + doses)
@@ -75,6 +77,41 @@ FastAPI (port 8112)
   2. Valider stock avant ordonnance (via /validate-stock)
   3. Créer ordonnance dans VetoPartner (via /create-ordonnance)
   4. Ordonnance est créée comme "prescription uniquement" (non délivrée)
+
+### 5. **dashboard** — Interface web 5-step wizard
+
+- **Service**: `DashboardService`
+  - Proxy vers erp-connector pour RDV, patients, animaux
+  - Gestion des consultations
+  - Proxy endpoints: /appointments, /search, /animals, /consultations
+
+- **Routes**:
+  - `GET /api/dashboard/rdv-today` — RDV du jour depuis erp-connector
+  - `GET /api/dashboard/search?q=` — Recherche patient/animal
+  - `GET /api/dashboard/animal/{id}` — Détails animal
+  - `GET /api/dashboard/acts` — Charge acts.json (5 actes)
+  - `POST /api/dashboard/consultation` — Crée consultation VetoPartner
+  - `GET /dashboard` → `static/index.html`
+
+- **Frontend** (`static/index.html`):
+  - Vanilla JS, ~600 lignes
+  - Light theme (cr-engine style): bg #F9FAFB, primary #4F46E5
+  - State management: { step, rdv, animal, protocol, doses, act, etc. }
+  - 5 étapes:
+    1. **RDV** — Sélection RDV du jour ou "continuer sans RDV"
+    2. **Patient** — Recherche/sélection animal, affichage fiche, poids éditable
+    3. **Anesthésie** — Sélection protocole, doses calculées avec fourchettes, checkboxes optional
+    4. **Acte** — Sélection acte chirurgical, form dynamique (JSON-driven)
+    5. **Résumé** — Recap complet, création consultation VetoPartner
+
+- **Configuration** (`acts.json`):
+  - 5 actes configurables: fluoroscopie, ondes de choc, PRP, ODC+PRP, CRI
+  - Champs dynamiques: text, number, textarea, select, checkbox
+  - Chaque champ: id, label, type, unit, required, default, options
+
+- **Enrichissement** (`protocols.json`):
+  - Ajout dose_min, dose_max, optional, code_central
+  - Fourchettes: Médétomidine 0.01–0.04, Kétamine 3–8, Butorphanol 0.2–0.4, etc.
 
 ## Points d'entrée
 
@@ -153,15 +190,19 @@ FastAPI (port 8112)
 
 ## Tailles de fichiers
 
-- `src/main.py`: ~175 lignes ✓
+- `src/main.py`: ~195 lignes ✓
 - `src/models.py`: ~65 lignes ✓
 - `src/modules/protocols/service.py`: ~97 lignes ✓
 - `src/modules/animals/service.py`: ~82 lignes ✓
 - `src/modules/surgeries/service.py`: ~110 lignes ✓
 - `src/modules/prescriptions/service.py`: ~172 lignes ✓
+- `src/modules/dashboard/service.py`: ~120 lignes ✓
+- `src/modules/dashboard/routes.py`: ~100 lignes ✓
+- `static/index.html`: ~600 lignes (vanilla JS) ✓
 - Routes: <100 lignes chacune ✓
 
 Tous les fichiers Python < 300 lignes (validations Forge).
+Tous les fichiers JSON (protocols.json, acts.json) < 2KB.
 
 ## Qualité Code
 

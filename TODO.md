@@ -27,7 +27,36 @@
 - [x] Type checking strict (mypy clean)
 - [x] Linting clean (ruff check/format)
 
+## ✅ Complété (v0.1.10 → v0.1.16) — Dashboard 5 étapes
+
+### Dashboard Wizard
+- [x] 5-step wizard frontend (RDV → Patient → Anesthésie → Acte → Résumé)
+- [x] Light theme (cr-engine style): #F9FAFB background, #4F46E5 primary
+- [x] RDV list avec selection depuis erp-connector
+- [x] Patient search/details avec poids éditable
+- [x] Protocol selection avec dose calculation affichage fourchettes
+- [x] Dose overrides (editable fields with recommended + min–max range)
+- [x] Optional molecules avec checkboxes (Butorphanol, Méthadone)
+- [x] Acts système: 5 actes configurables (fluoroscopie, ondes, PRP, ODC+PRP, CRI)
+- [x] Dynamic form rendering depuis acts.json (text, number, textarea, select, checkbox)
+- [x] Consultation VetoPartner creation endpoint
+- [x] DashboardService proxy vers erp-connector
+- [x] StaticFiles mount et /dashboard route
+- [x] acts.json et protocols.json enrichissement (dose_min/dose_max/optional/code_central)
+- [x] .pre-commit-config.yaml ajouté
+- [x] manifest.json avec dashboard config (page, category)
+- [x] Validation Forge: VALID (5 warnings)
+- [x] Déploiement v0.1.16 successful
+
 ## 📋 À faire - Priorité haute
+
+### erp-ui-sdk Library
+- [ ] Create `/home/onyx/projects/sdk-dev/erp-ui-sdk/`
+- [ ] ErpClient, AppointmentService, PatientService
+- [ ] Pydantic models: Animal, Appointment, SearchResult, Client
+- [ ] Standardize erp-connector calls across skills
+- [ ] Tests et wheel build
+- [ ] Déploiement
 
 ### Persistence
 - [ ] Remplacer store en mémoire par SQLite/PostgreSQL
@@ -46,11 +75,6 @@
 - [ ] Annulation/modification d'ordonnances
 
 ## 📋 À faire - Priorité moyenne
-
-### Frontend
-- [ ] SPA 4 étapes (recherche, poids, doses, confirmation)
-- [ ] Intégration protocoles via API
-- [ ] Validation stock avant ordonnance
 
 ### Export & Reporting
 - [ ] Génération PDF des fiches de chirurgie
