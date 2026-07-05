@@ -47,6 +47,86 @@ Informations du service.
 
 ---
 
+## Dashboard (ErpPatientSelector)
+
+Endpoints pour la sélection patient/RDV via la lib `erp-ui-sdk`.
+
+### GET /api/dashboard/sites
+Liste tous les sites vétérinaires depuis erp-connector.
+
+**Réponse**:
+```json
+{
+  "sites": [
+    {
+      "id": 1,
+      "nom": "Clinique Principale",
+      "adresse": "123 Rue Test",
+      "telephone": "",
+      "email": ""
+    }
+  ]
+}
+```
+
+### GET /api/dashboard/vets
+Liste tous les vétérinaires depuis erp-connector (filtrés, triés par nom).
+
+**Réponse**:
+```json
+{
+  "vets": [
+    {
+      "id": 12,
+      "nom": "DUPONT",
+      "prenom": "Jean",
+      "email": "jean@test.com",
+      "specialite": ""
+    }
+  ]
+}
+```
+
+### GET /api/dashboard/appointments
+Liste les RDV pour une plage de dates depuis erp-connector.
+
+**Paramètres**:
+- `date_from` (query): Date début (YYYY-MM-DD)
+- `date_to` (query): Date fin (YYYY-MM-DD)
+- `vet_id` (query, optionnel): Filtre par ID vétérinaire
+
+**Exemple**:
+```bash
+curl "http://10.0.0.13:8112/api/dashboard/appointments?date_from=2026-07-04&date_to=2026-07-04&vet_id=12"
+```
+
+**Réponse**:
+```json
+{
+  "appointments": [
+    {
+      "id": 1,
+      "animal_id": 42,
+      "animal_nom": "Fido",
+      "espece": "chien",
+      "race": "Labrador",
+      "client_id": 100,
+      "client_nom": "Dupont",
+      "client_prenom": "Jean",
+      "motif": "Consultation",
+      "datetime_consult": "2026-07-04 14:30:00",
+      "date_rdv": "2026-07-04",
+      "vet_id": 12,
+      "vet_name": "DUPONT",
+      "duree_min": 30,
+      "notes": ""
+    }
+  ]
+}
+```
+
+---
+
 ## Protocoles Anesthésiques
 
 ### GET /api/protocols/

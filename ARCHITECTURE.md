@@ -81,12 +81,15 @@ FastAPI (port 8112)
 ### 5. **dashboard** — Interface web 5-step wizard
 
 - **Service**: `DashboardService`
-  - Proxy vers erp-connector pour RDV, patients, animaux
+  - Proxy vers erp-connector pour RDV, patients, animaux, sites, vétérinaires
+  - Utilise la lib `erp-ui-sdk` pour les services (SiteService, VetService, AppointmentService, PatientService)
   - Gestion des consultations
-  - Proxy endpoints: /appointments, /search, /animals, /consultations
+  - Proxy endpoints: /sites, /vets, /appointments, /search, /animals, /consultations
 
 - **Routes**:
-  - `GET /api/dashboard/rdv-today` — RDV du jour depuis erp-connector
+  - `GET /api/dashboard/sites` — Tous les sites vétérinaires (via erp-ui-sdk)
+  - `GET /api/dashboard/vets` — Tous les vétérinaires (via erp-ui-sdk)
+  - `GET /api/dashboard/appointments` — RDV par date/vét (via erp-ui-sdk)
   - `GET /api/dashboard/search?q=` — Recherche patient/animal
   - `GET /api/dashboard/animal/{id}` — Détails animal
   - `GET /api/dashboard/acts` — Charge acts.json (5 actes)
@@ -94,15 +97,22 @@ FastAPI (port 8112)
   - `GET /dashboard` → `static/index.html`
 
 - **Frontend** (`static/index.html`):
-  - Vanilla JS, ~600 lignes
+  - Vanilla JS, ~1100 lignes
   - Light theme (cr-engine style): bg #F9FAFB, primary #4F46E5
-  - State management: { step, rdv, animal, protocol, doses, act, etc. }
+  - Utilise composant `ErpPatientSelector` (JavaScript vanilla, via `/static/js/erp-patient-selector.js`)
+  - State management: { step, animal, protocol, doses, act, poids, selectedDate, etc. }
   - 5 étapes:
-    1. **RDV** — Sélection RDV du jour ou "continuer sans RDV"
-    2. **Patient** — Recherche/sélection animal, affichage fiche, poids éditable
-    3. **Anesthésie** — Sélection protocole, doses calculées avec fourchettes, checkboxes optional
-    4. **Acte** — Sélection acte chirurgical, form dynamique (JSON-driven)
+    1. **RDV & Patient** — Sélection via ErpPatientSelector (sites, vétérinaires, date, RDV) ou "continuer sans RDV"
+    2. **Patient** — Confirmation patient, affichage fiche, poids éditable
+    3. **Acte** — Sélection acte chirurgical, form dynamique (JSON-driven)
+    4. **Anesthésie** — Sélection protocole, doses calculées avec fourchettes, checkboxes optional
     5. **Résumé** — Recap complet, création consultation VetoPartner
+
+- **Component** (`static/js/erp-patient-selector.js`):
+  - Composant JavaScript vanilla (aucune dépendance)
+  - Intègre site selector, vet loader, appointment calendar/list
+  - Appelle `/api/dashboard/sites`, `/api/dashboard/vets`, `/api/dashboard/appointments`
+  - Callback `onSelect(patient)` retourne: `{ animal_id, animal_nom, espece, race, poids, client_nom, client_prenom, date_rdv }`
 
 - **Configuration** (`acts.json`):
   - 5 actes configurables: fluoroscopie, ondes de choc, PRP, ODC+PRP, CRI
@@ -183,7 +193,14 @@ FastAPI (port 8112)
 
 ## Intégrations implémentées
 
+- ✓ **erp-ui-sdk** (lib Python+JavaScript):
+  - ErpClient (async HTTP client)
+  - SiteService, VetService, AppointmentService, PatientService
+  - ErpPatientSelector (composant JavaScript vanilla pour sélection patient/RDV)
+  - Utilisée par DashboardService pour les endpoints /sites, /vets, /appointments
+
 - ✓ **erp-connector** (10.0.0.44:8101):
+  - Recherche de sites, vétérinaires, RDV via erp-ui-sdk
   - Recherche de médicaments en stock (GET /produits)
   - Création d'ordonnances anesthésiques (POST /animals/{id}/ordonnances)
   - Validation stricte: tous les médicaments doivent être en stock
@@ -196,13 +213,15 @@ FastAPI (port 8112)
 - `src/modules/animals/service.py`: ~82 lignes ✓
 - `src/modules/surgeries/service.py`: ~110 lignes ✓
 - `src/modules/prescriptions/service.py`: ~172 lignes ✓
-- `src/modules/dashboard/service.py`: ~120 lignes ✓
-- `src/modules/dashboard/routes.py`: ~100 lignes ✓
-- `static/index.html`: ~600 lignes (vanilla JS) ✓
-- Routes: <100 lignes chacune ✓
+- `src/modules/dashboard/service.py`: ~198 lignes ✓
+- `src/modules/dashboard/routes.py`: ~145 lignes ✓
+- `static/index.html`: ~1100 lignes (vanilla JS) ✓
+- `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, aucune dépendance) ✓
+- Routes: <200 lignes chacune ✓
 
 Tous les fichiers Python < 300 lignes (validations Forge).
 Tous les fichiers JSON (protocols.json, acts.json) < 2KB.
+JavaScript: vanilla (pas de frameworks), no dependencies.
 
 ## Qualité Code
 

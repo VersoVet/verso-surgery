@@ -26,6 +26,45 @@ def load_acts() -> list[dict[str, Any]]:
         return []
 
 
+@router.get("/sites")
+async def get_sites() -> dict[str, Any]:
+    """Récupère tous les sites vétérinaires.
+
+    Returns:
+        Dict avec liste des sites.
+    """
+    return await DashboardService.get_sites()
+
+
+@router.get("/vets")
+async def get_vets() -> dict[str, Any]:
+    """Récupère tous les vétérinaires.
+
+    Returns:
+        Dict avec liste des vétérinaires.
+    """
+    return await DashboardService.get_vets()
+
+
+@router.get("/appointments")
+async def get_appointments(
+    date_from: str,
+    date_to: str,
+    vet_id: int | None = None,
+) -> dict[str, Any]:
+    """Récupère les RDV pour une plage de dates.
+
+    Args:
+        date_from: Date de début (YYYY-MM-DD)
+        date_to: Date de fin (YYYY-MM-DD)
+        vet_id: ID vétérinaire optionnel
+
+    Returns:
+        Dict avec liste des RDV.
+    """
+    return await DashboardService.get_appointments(date_from, date_to, vet_id)
+
+
 @router.get("/rdv-today")
 async def get_rdv_today() -> dict[str, Any]:
     """Récupère les rendez-vous du jour.

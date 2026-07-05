@@ -545,24 +545,13 @@
             </div>
         </div>
 
-        <!-- STEP 1: RDV -->
+        <!-- STEP 1: RDV (ERP Patient Selector) -->
         <div class="step active" id="step-0">
             <div class="panel">
-                <h2>📅 Étape 1 — Rendez-vous</h2>
-                <div id="rdv-content">
-                    <div class="form-group">
-                        <label for="rdv-date">Date des RDV</label>
-                        <input type="date" id="rdv-date" class="search-input" onchange="window.loadRdvForDate()">
-                    </div>
-                    <div id="rdv-loading" class="hidden">
-                        <p style="text-align: center; color: #6B7280;">
-                            <span class="spinner"></span> Chargement...
-                        </p>
-                    </div>
-                    <div class="rdv-list" id="rdv-list"></div>
-                    <div class="button-group">
-                        <button class="btn btn-skip" onclick="window.skipRdv()">Continuer sans RDV</button>
-                    </div>
+                <h2>📅 Étape 1 — Rendez-vous & Patient</h2>
+                <div id="erp-patient-selector-container"></div>
+                <div class="button-group">
+                    <button class="btn btn-skip" onclick="window.nextStep()">Continuer sans RDV</button>
                 </div>
             </div>
         </div>
@@ -650,6 +639,7 @@
         </div>
     </div>
 
+    <script src="/static/js/erp-patient-selector.js"></script>
     <script>
         const state = {
             step: 0,
@@ -1095,12 +1085,13 @@
 
         window.nextStep = async function() {
             if (state.step === 0) {
-                state.poids = parseFloat(document.getElementById('weight-input')?.value || 0);
-                if (!state.animal && state.erpAnimalId) {
-                    await loadAnimalDetails();
-                }
+                // Step 0: RDV/Patient selection via ErpPatientSelector
+                // When a patient is selected via ErpPatientSelector's onSelect callback,
+                // this function is called to advance to Step 1
+                // No additional validation needed here
                 state.step = 1;
             } else if (state.step === 1) {
+                // Step 1: Patient details confirmation
                 state.poids = parseFloat(document.getElementById('weight-input').value || 0);
                 if (state.poids <= 0) {
                     alert('Veuillez saisir un poids valide');
@@ -1145,7 +1136,43 @@
         // Init
         document.addEventListener('DOMContentLoaded', async function() {
             updateProgress();
-            await loadRdvToday();
+
+            // Initialize ErpPatientSelector
+            const patientSelector = new ErpPatientSelector({
+                container: document.getElementById('erp-patient-selector-container'),
+                apiBase: '/api/dashboard',
+                defaultSiteId: 2,
+                onSelect: async function(patient) {
+                    // Handle patient selection from ErpPatientSelector
+                    state.erpAnimalId = patient.animal_id;
+                    state.animal = {
+                        nom: patient.animal_nom,
+                        espece: patient.espece,
+                        race: patient.race || '',
+                        poids: patient.poids || 0,
+                        id: patient.animal_id,
+                    };
+                    state.poids = patient.poids || 0;
+                    state.selectedDate = patient.date_rdv;
+
+                    // Load full animal details from API
+                    await loadAnimalDetails();
+
+                    // Display animal details in Step 1
+                    renderAnimalDetails();
+                    updateButtonState();
+
+                    // Auto-advance to next step
+                    state.step = 1;
+                    updateStepVisibility();
+                }
+            });
+
+            // Initialize the selector
+            await patientSelector.init();
+
+            // Store instance globally if needed
+            window._erpPatientSelectorInstance = patientSelector;
         });
     </script>
 </body>

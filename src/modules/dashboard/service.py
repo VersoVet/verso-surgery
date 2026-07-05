@@ -4,6 +4,12 @@ import logging
 from typing import Any
 
 import httpx
+from erp_ui_sdk import (
+    AppointmentService,
+    ErpClient,
+    SiteService,
+    VetService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +90,69 @@ class DashboardService:
         except Exception as e:
             logger.warning(f"Failed to get animal {animal_id}: {e}")
             return None
+
+    @classmethod
+    async def get_sites(cls) -> dict[str, Any]:
+        """Récupère tous les sites.
+
+        Returns:
+            Dict avec liste des sites.
+        """
+        try:
+            client = ErpClient(base_url=cls.ERP_BASE_URL, timeout=cls.TIMEOUT)
+            sites = await SiteService.list(client)
+            return {
+                "sites": [site.model_dump() for site in sites],
+            }
+        except Exception as e:
+            logger.warning(f"Failed to get sites: {e}")
+            return {"sites": []}
+
+    @classmethod
+    async def get_vets(cls) -> dict[str, Any]:
+        """Récupère tous les vétérinaires.
+
+        Returns:
+            Dict avec liste des vétérinaires.
+        """
+        try:
+            client = ErpClient(base_url=cls.ERP_BASE_URL, timeout=cls.TIMEOUT)
+            vets = await VetService.list(client)
+            return {
+                "vets": [vet.model_dump() for vet in vets],
+            }
+        except Exception as e:
+            logger.warning(f"Failed to get vets: {e}")
+            return {"vets": []}
+
+    @classmethod
+    async def get_appointments(
+        cls,
+        date_from: str,
+        date_to: str,
+        vet_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Récupère les RDV pour une plage de dates.
+
+        Args:
+            date_from: Date de début (YYYY-MM-DD)
+            date_to: Date de fin (YYYY-MM-DD)
+            vet_id: ID vétérinaire optionnel
+
+        Returns:
+            Dict avec liste des RDV.
+        """
+        try:
+            client = ErpClient(base_url=cls.ERP_BASE_URL, timeout=cls.TIMEOUT)
+            appointments = await AppointmentService.get_range(
+                client, date_from, date_to, vet_id
+            )
+            return {
+                "appointments": [apt.model_dump() for apt in appointments],
+            }
+        except Exception as e:
+            logger.warning(f"Failed to get appointments: {e}")
+            return {"appointments": []}
 
     @classmethod
     async def create_consultation(
