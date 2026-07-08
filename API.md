@@ -94,10 +94,11 @@ Liste les RDV pour une plage de dates depuis erp-connector.
 - `date_from` (query): Date début (YYYY-MM-DD)
 - `date_to` (query): Date fin (YYYY-MM-DD)
 - `vet_id` (query, optionnel): Filtre par ID vétérinaire
+- `site_id` (query, optionnel): Filtre par ID site
 
 **Exemple**:
 ```bash
-curl "http://10.0.0.13:8112/api/dashboard/appointments?date_from=2026-07-04&date_to=2026-07-04&vet_id=12"
+curl "http://10.0.0.13:8112/api/dashboard/appointments?date_from=2026-07-04&date_to=2026-07-04&site_id=2&vet_id=12"
 ```
 
 **Réponse**:
@@ -122,6 +123,172 @@ curl "http://10.0.0.13:8112/api/dashboard/appointments?date_from=2026-07-04&date
       "notes": ""
     }
   ]
+}
+```
+
+### GET /api/dashboard/acts
+Liste tous les actes chirurgicaux disponibles.
+
+**Réponse**:
+```json
+{
+  "acts": [
+    {
+      "id": "fluoroscopie",
+      "name": "Fluoroscopie",
+      "description": "Imaging fluoroscopique...",
+      "fields": [
+        {
+          "id": "region",
+          "label": "Région",
+          "type": "select",
+          "options": ["Anterieures", "Posterieures", ...]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### GET /api/dashboard/search
+Recherche un patient/animal.
+
+**Paramètres**:
+- `q` (query): Terme de recherche (min. 2 caractères)
+
+**Exemple**:
+```bash
+curl "http://10.0.0.13:8112/api/dashboard/search?q=fido"
+```
+
+**Réponse**:
+```json
+{
+  "results": [...]
+}
+```
+
+### GET /api/dashboard/animal/{animal_id}
+Récupère les détails d'un animal.
+
+**Paramètres**:
+- `animal_id` (path): ID VetoPartner de l'animal
+
+**Réponse**:
+```json
+{
+  "id": 42,
+  "nom": "Fido",
+  "espece": "Chien",
+  "race": "Labrador",
+  "poids": 25.5,
+  "age_years": 3,
+  "sexe": "Mâle",
+  "client_id": 100,
+  "client_nom": "Dupont"
+}
+```
+
+### POST /api/dashboard/consultation
+Crée une consultation VetoPartner via erp-connector.
+
+**Paramètres**:
+- `animal_id` (query): ID de l'animal VetoPartner
+- `synthese` (query): Synthèse/contenu de la consultation
+- `motif` (query, défaut: "Chirurgie"): Motif de la consultation
+- `veto_id` (query, optionnel): ID du vétérinaire
+- `site_id` (query, optionnel): ID du site
+
+**Exemple**:
+```bash
+curl -X POST "http://10.0.0.13:8112/api/dashboard/consultation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "animal_id": 42,
+    "synthese": "Consultation chirurgicale pour ablation kystes",
+    "motif": "Chirurgie",
+    "veto_id": 1,
+    "site_id": 2
+  }'
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "consultation_id": 5432,
+  "animal_id": 42
+}
+```
+
+**Erreur** (200 avec success=false):
+```json
+{
+  "success": false,
+  "error": "Erreur lors de création consultation: ...",
+  "consultation_id": null
+}
+```
+
+### POST /api/dashboard/ordonnance
+Crée une ordonnance VetoPartner via erp-connector.
+
+**Paramètres**:
+- `animal_id` (query): ID de l'animal VetoPartner
+- `lignes` (JSON body): Tableau des lignes d'ordonnance
+- `veto_id` (query, optionnel): ID du vétérinaire
+- `site_id` (query, défaut: 2): ID du site
+
+**Structure d'une ligne**:
+```json
+{
+  "designation": "Nom du médicament",
+  "quantite": 1,
+  "notes": "Posologie/instructions",
+  "type_ligne": "hors_stock" | "produit" | "note"
+}
+```
+
+**Exemple**:
+```bash
+curl -X POST "http://10.0.0.13:8112/api/dashboard/ordonnance" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "animal_id": 42,
+    "lignes": [
+      {
+        "designation": "Propofol",
+        "quantite": 1,
+        "notes": "2.5 mL (100 mg/mL)",
+        "type_ligne": "hors_stock"
+      },
+      {
+        "designation": "Domitor",
+        "quantite": 1,
+        "notes": "0.4 mL (1 mg/mL)",
+        "type_ligne": "hors_stock"
+      }
+    ],
+    "veto_id": 1,
+    "site_id": 2
+  }'
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "ordonnance_id": 9876,
+  "animal_id": 42
+}
+```
+
+**Erreur** (200 avec success=false):
+```json
+{
+  "success": false,
+  "error": "Erreur lors de création ordonnance: ...",
+  "ordonnance_id": null
 }
 ```
 
