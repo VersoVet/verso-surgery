@@ -89,11 +89,12 @@ FastAPI (port 8112)
 - **Routes**:
   - `GET /api/dashboard/sites` — Tous les sites vétérinaires (via erp-ui-sdk)
   - `GET /api/dashboard/vets` — Tous les vétérinaires (via erp-ui-sdk)
-  - `GET /api/dashboard/appointments` — RDV par date/vét (via erp-ui-sdk)
+  - `GET /api/dashboard/appointments?date_from=...&date_to=...&site_id=...` — RDV par date/site/vét (via erp-ui-sdk)
   - `GET /api/dashboard/search?q=` — Recherche patient/animal
   - `GET /api/dashboard/animal/{id}` — Détails animal
   - `GET /api/dashboard/acts` — Charge acts.json (5 actes)
-  - `POST /api/dashboard/consultation` — Crée consultation VetoPartner
+  - `POST /api/dashboard/consultation` — Crée consultation VetoPartner (synthese, motif, veto_id, site_id)
+  - `POST /api/dashboard/ordonnance` — Crée ordonnance VetoPartner (animal_id, lignes, veto_id, site_id)
   - `GET /dashboard` → `static/index.html`
 
 - **Frontend** (`static/index.html`):
@@ -112,7 +113,14 @@ FastAPI (port 8112)
   - Composant JavaScript vanilla (aucune dépendance)
   - Intègre site selector, vet loader, appointment calendar/list
   - Appelle `/api/dashboard/sites`, `/api/dashboard/vets`, `/api/dashboard/appointments`
+  - **Filtre RDV**: Recharge les RDV quand la date ou le site change (rechargement API)
   - Callback `onSelect(patient)` retourne: `{ animal_id, animal_nom, espece, race, poids, client_nom, client_prenom, date_rdv }`
+
+- **Workflow Consultation + Ordonnance** (Étape 5):
+  1. Capturer les notes libres du textarea
+  2. Créer consultation via `POST /api/dashboard/consultation` avec synthèse complète
+  3. Si doses sélectionnées: créer ordonnance via `POST /api/dashboard/ordonnance`
+  4. Les doses sélectionnées deviennent des lignes d'ordonnance (designation, notes, type_ligne)
 
 - **Configuration** (`acts.json`):
   - 5 actes configurables: fluoroscopie, ondes de choc, PRP, ODC+PRP, CRI
@@ -213,9 +221,9 @@ FastAPI (port 8112)
 - `src/modules/animals/service.py`: ~82 lignes ✓
 - `src/modules/surgeries/service.py`: ~110 lignes ✓
 - `src/modules/prescriptions/service.py`: ~172 lignes ✓
-- `src/modules/dashboard/service.py`: ~198 lignes ✓
-- `src/modules/dashboard/routes.py`: ~145 lignes ✓
-- `static/index.html`: ~1100 lignes (vanilla JS) ✓
+- `src/modules/dashboard/service.py`: ~257 lignes (+ create_ordonnance) ✓
+- `src/modules/dashboard/routes.py`: ~180 lignes (+ /ordonnance endpoint, site_id) ✓
+- `static/index.html`: ~1225 lignes (vanilla JS, avec ordonnance) ✓
 - `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, aucune dépendance) ✓
 - Routes: <200 lignes chacune ✓
 
