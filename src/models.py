@@ -69,3 +69,31 @@ class Surgery(BaseModel):
     vet_id: str = ""
     status: str = "draft"
     notes: str = ""
+
+
+class OrdonnanceLigne(BaseModel):
+    """Ligne d'ordonnance."""
+
+    designation: str = Field(..., description="Nom du médicament")
+    quantite: int = Field(default=1, description="Quantité")
+    notes: str = Field(default="", description="Notes/posologie")
+    type_ligne: str = Field(default="hors_stock", description="Type: produit, hors_stock, note")
+
+
+class CreateConsultationRequest(BaseModel):
+    """Requête création consultation."""
+
+    animal_id: int
+    synthese: str
+    motif: str = "Chirurgie"
+    veto_id: int | None = None
+    site_id: int | None = None
+
+
+class CreateOrdonnanceRequest(BaseModel):
+    """Requête création ordonnance."""
+
+    animal_id: int
+    lignes: list[OrdonnanceLigne]
+    veto_id: int | None = None
+    site_id: int = 2

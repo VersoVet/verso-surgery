@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from src.models import CreateConsultationRequest, CreateOrdonnanceRequest
 from src.modules.dashboard.service import DashboardService
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -125,56 +126,43 @@ async def get_acts() -> dict[str, Any]:
 
 @router.post("/consultation")
 async def create_consultation(
-    animal_id: int,
-    synthese: str,
-    motif: str = "Chirurgie",
-    veto_id: int | None = None,
-    site_id: int | None = None,
+    request: CreateConsultationRequest,
 ) -> dict[str, Any]:
     """Crée une consultation VetoPartner.
 
     Args:
-        animal_id: ID de l'animal
-        synthese: Synthèse de la consultation
-        motif: Motif de la consultation
-        veto_id: ID du vétérinaire optionnel
-        site_id: ID du site optionnel
+        request: Données de la consultation
 
     Returns:
         Status de création avec ID consultation.
     """
     result = await DashboardService.create_consultation(
-        animal_id=animal_id,
-        synthese=synthese,
-        motif=motif,
-        veto_id=veto_id,
-        site_id=site_id,
+        animal_id=request.animal_id,
+        synthese=request.synthese,
+        motif=request.motif,
+        veto_id=request.veto_id,
+        site_id=request.site_id,
     )
     return result
 
 
 @router.post("/ordonnance")
 async def create_ordonnance(
-    animal_id: int,
-    lignes: list[dict[str, Any]],
-    veto_id: int | None = None,
-    site_id: int = 2,
+    request: CreateOrdonnanceRequest,
 ) -> dict[str, Any]:
     """Crée une ordonnance VetoPartner.
 
     Args:
-        animal_id: ID de l'animal
-        lignes: Lignes d'ordonnance
-        veto_id: ID du vétérinaire optionnel
-        site_id: ID du site (défaut: 2)
+        request: Données de l'ordonnance
 
     Returns:
         Status de création avec ID ordonnance.
     """
+    lignes = [ligne.model_dump() for ligne in request.lignes]
     result = await DashboardService.create_ordonnance(
-        animal_id=animal_id,
+        animal_id=request.animal_id,
         lignes=lignes,
-        veto_id=veto_id,
-        site_id=site_id,
+        veto_id=request.veto_id,
+        site_id=request.site_id,
     )
     return result
