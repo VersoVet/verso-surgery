@@ -131,6 +131,7 @@ class DashboardService:
         date_from: str,
         date_to: str,
         vet_id: int | None = None,
+        site_id: int | None = None,
     ) -> dict[str, Any]:
         """Récupère les RDV pour une plage de dates.
 
@@ -138,6 +139,7 @@ class DashboardService:
             date_from: Date de début (YYYY-MM-DD)
             date_to: Date de fin (YYYY-MM-DD)
             vet_id: ID vétérinaire optionnel
+            site_id: ID site optionnel
 
         Returns:
             Dict avec liste des RDV.
@@ -145,7 +147,7 @@ class DashboardService:
         try:
             client = ErpClient(base_url=cls.ERP_BASE_URL, timeout=cls.TIMEOUT)
             appointments = await AppointmentService.get_range(
-                client, date_from, date_to, vet_id
+                client, date_from, date_to, vet_id, site_id
             )
             return {
                 "appointments": [apt.model_dump() for apt in appointments],
@@ -158,35 +160,44 @@ class DashboardService:
     async def create_consultation(
         cls,
         animal_id: int,
-        text: str,
-        consult_type: str = "surgery",
+        synthese: str,
+        motif: str = "Chirurgie",
+        veto_id: int | None = None,
+        site_id: int | None = None,
     ) -> dict[str, Any]:
         """Crée une consultation VetoPartner.
 
         Args:
             animal_id: ID de l'animal
-            text: Texte de la consultation
-            consult_type: Type de consultation
+            synthese: Synthèse de la consultation
+            motif: Motif de la consultation
+            veto_id: ID du vétérinaire optionnel
+            site_id: ID du site optionnel
 
         Returns:
             Dict avec status et ID consultation créée.
         """
         try:
             async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
+                body: dict[str, Any] = {
+                    "animal_id": animal_id,
+                    "synthese": synthese,
+                    "motif": motif,
+                }
+                if veto_id is not None:
+                    body["veto_id"] = veto_id
+                if site_id is not None:
+                    body["site_id"] = site_id
                 response = await client.post(
-                    f"{cls.ERP_BASE_URL}/animals/{animal_id}/consultations",
-                    json={
-                        "text": text,
-                        "type": consult_type,
-                    },
+                    f"{cls.ERP_BASE_URL}/consultations",
+                    json=body,
                 )
                 response.raise_for_status()
                 result: Any = response.json()
 
                 return {
                     "success": True,
-                    "consultation_id": result.get("id")
-                    or result.get("consultation_id"),
+                    "consultation_id": result.get("id"),
                     "animal_id": animal_id,
                 }
         except Exception as e:
@@ -195,4 +206,52 @@ class DashboardService:
                 "success": False,
                 "error": f"Erreur lors de création consultation: {str(e)}",
                 "consultation_id": None,
+            }
+
+    @classmethod
+    async def create_ordonnance(
+        cls,
+        animal_id: int,
+        lignes: list[dict[str, Any]],
+        veto_id: int | None = None,
+        site_id: int = 2,
+    ) -> dict[str, Any]:
+        """Crée une ordonnance VetoPartner.
+
+        Args:
+            animal_id: ID de l'animal
+            lignes: Lignes d'ordonnance [{designation, quantite, notes}]
+            veto_id: ID du vétérinaire
+            site_id: ID du site (défaut: 2)
+
+        Returns:
+            Dict avec success et ordonnance_id.
+        """
+        try:
+            async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
+                body: dict[str, Any] = {
+                    "lignes": lignes,
+                    "type_ordo": 1,
+                    "id_site": site_id,
+                }
+                if veto_id is not None:
+                    body["veto_id"] = veto_id
+                response = await client.post(
+                    f"{cls.ERP_BASE_URL}/animals/{animal_id}/ordonnances",
+                    json=body,
+                )
+                response.raise_for_status()
+                result: Any = response.json()
+
+                return {
+                    "success": True,
+                    "ordonnance_id": result.get("id"),
+                    "animal_id": animal_id,
+                }
+        except Exception as e:
+            logger.error(f"Failed to create ordonnance: {e}")
+            return {
+                "success": False,
+                "error": f"Erreur lors de création ordonnance: {str(e)}",
+                "ordonnance_id": None,
             }

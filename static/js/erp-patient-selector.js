@@ -220,8 +220,10 @@ class ErpPatientSelector {
     const dateInput = this.container.querySelector('#erp-date-input');
 
     if (siteSelect) {
-      siteSelect.addEventListener('change', (e) => {
+      siteSelect.addEventListener('change', async (e) => {
         this.selectedSiteId = parseInt(e.target.value) || this.defaultSiteId;
+        await this._loadAppointments();
+        this._renderAppointments();
       });
     }
 
@@ -233,9 +235,10 @@ class ErpPatientSelector {
     }
 
     if (dateInput) {
-      dateInput.addEventListener('change', (e) => {
+      dateInput.addEventListener('change', async (e) => {
         this.selectedDate = e.target.value;
-        this._filterAndRenderAppointments();
+        await this._loadAppointments();
+        this._renderAppointments();
       });
     }
   }
@@ -292,6 +295,7 @@ class ErpPatientSelector {
       const params = new URLSearchParams({
         date_from: this.selectedDate,
         date_to: this.selectedDate,
+        site_id: this.selectedSiteId,
       });
 
       const response = await fetch(`${this.apiBase}/appointments?${params}`);

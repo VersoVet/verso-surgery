@@ -1050,21 +1050,67 @@
             feedback.innerHTML = '<div class="feedback success"><span class="spinner" style="display: inline-block; margin-right: 8px;"></span> Création en cours...</div>';
 
             try {
-                const resp = await fetch(`${API_BASE}/dashboard/consultation`, {
+                // Capture notes from textarea
+                state.notes = document.getElementById('notes-textarea').value || '';
+
+                // Build consultation synthèse
+                const synthese = `Consultation chirurgicale\n\nPatient: ${state.animal?.nom} (${state.animal?.espece})\nActe: ${state.act?.name}\nProtocole anesthésie: ${state.protocol}\n\nNotes: ${state.notes}`;
+
+                // Create consultation
+                const consultResp = await fetch(`${API_BASE}/dashboard/consultation`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         animal_id: state.erpAnimalId,
-                        text: `Consultation chirurgicale\n\nPatient: ${state.animal?.nom}\nProtocole: ${state.protocol}\nActe: ${state.act?.name}\n\nNotes: ${state.notes}`,
-                        consult_type: 'surgery',
+                        synthese: synthese,
+                        motif: state.act?.name || 'Chirurgie',
+                        veto_id: state.vetId || null,
+                        site_id: state.siteId || 2,
                     }),
                 });
-                const result = await resp.json();
+                const consultResult = await consultResp.json();
 
-                if (result.success) {
-                    feedback.innerHTML = `<div class="feedback success">✅ Consultation créée (ID: ${result.consultation_id})</div>`;
+                if (!consultResult.success) {
+                    feedback.innerHTML = `<div class="feedback error">❌ Consultation: ${consultResult.error}</div>`;
+                    return;
+                }
+
+                // Build ordonnance lines from checked doses
+                const lignes = [];
+                if (state.doses && state.doses.length > 0) {
+                    state.doses.forEach((d, i) => {
+                        if (state.doseChecked[i]) {
+                            const administeredDose = state.doseOverrides[i] !== undefined ? state.doseOverrides[i] : d.volume_ml;
+                            lignes.push({
+                                designation: d.commercial_name,
+                                quantite: 1,
+                                notes: `${administeredDose.toFixed(2)} mL (${(d.dose_mg || 'dose').toString().split('.')[0]} mg/mL)`,
+                                type_ligne: 'hors_stock',
+                            });
+                        }
+                    });
+                }
+
+                // Create ordonnance if there are lines
+                if (lignes.length > 0) {
+                    const ordoResp = await fetch(`${API_BASE}/dashboard/ordonnance`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            animal_id: state.erpAnimalId,
+                            lignes: lignes,
+                            veto_id: state.vetId || null,
+                            site_id: state.siteId || 2,
+                        }),
+                    });
+                    const ordoResult = await ordoResp.json();
+                    if (!ordoResult.success) {
+                        feedback.innerHTML = `<div class="feedback warning">⚠️ Consultation OK (ID: ${consultResult.consultation_id}) mais ordonnance échouée: ${ordoResult.error}</div>`;
+                        return;
+                    }
+                    feedback.innerHTML = `<div class="feedback success">✅ Consultation (ID: ${consultResult.consultation_id}) + Ordonnance (ID: ${ordoResult.ordonnance_id}) créées</div>`;
                 } else {
-                    feedback.innerHTML = `<div class="feedback error">❌ ${result.error}</div>`;
+                    feedback.innerHTML = `<div class="feedback success">✅ Consultation créée (ID: ${consultResult.consultation_id})</div>`;
                 }
             } catch (e) {
                 feedback.innerHTML = `<div class="feedback error">❌ Erreur: ${e.message}</div>`;

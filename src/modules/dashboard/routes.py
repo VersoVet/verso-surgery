@@ -51,6 +51,7 @@ async def get_appointments(
     date_from: str,
     date_to: str,
     vet_id: int | None = None,
+    site_id: int | None = None,
 ) -> dict[str, Any]:
     """Récupère les RDV pour une plage de dates.
 
@@ -58,11 +59,12 @@ async def get_appointments(
         date_from: Date de début (YYYY-MM-DD)
         date_to: Date de fin (YYYY-MM-DD)
         vet_id: ID vétérinaire optionnel
+        site_id: ID site optionnel
 
     Returns:
         Dict avec liste des RDV.
     """
-    return await DashboardService.get_appointments(date_from, date_to, vet_id)
+    return await DashboardService.get_appointments(date_from, date_to, vet_id, site_id)
 
 
 @router.get("/rdv-today")
@@ -124,22 +126,55 @@ async def get_acts() -> dict[str, Any]:
 @router.post("/consultation")
 async def create_consultation(
     animal_id: int,
-    text: str,
-    consult_type: str = "surgery",
+    synthese: str,
+    motif: str = "Chirurgie",
+    veto_id: int | None = None,
+    site_id: int | None = None,
 ) -> dict[str, Any]:
     """Crée une consultation VetoPartner.
 
     Args:
         animal_id: ID de l'animal
-        text: Texte de la consultation
-        consult_type: Type de consultation
+        synthese: Synthèse de la consultation
+        motif: Motif de la consultation
+        veto_id: ID du vétérinaire optionnel
+        site_id: ID du site optionnel
 
     Returns:
         Status de création avec ID consultation.
     """
     result = await DashboardService.create_consultation(
         animal_id=animal_id,
-        text=text,
-        consult_type=consult_type,
+        synthese=synthese,
+        motif=motif,
+        veto_id=veto_id,
+        site_id=site_id,
+    )
+    return result
+
+
+@router.post("/ordonnance")
+async def create_ordonnance(
+    animal_id: int,
+    lignes: list[dict[str, Any]],
+    veto_id: int | None = None,
+    site_id: int = 2,
+) -> dict[str, Any]:
+    """Crée une ordonnance VetoPartner.
+
+    Args:
+        animal_id: ID de l'animal
+        lignes: Lignes d'ordonnance
+        veto_id: ID du vétérinaire optionnel
+        site_id: ID du site (défaut: 2)
+
+    Returns:
+        Status de création avec ID ordonnance.
+    """
+    result = await DashboardService.create_ordonnance(
+        animal_id=animal_id,
+        lignes=lignes,
+        veto_id=veto_id,
+        site_id=site_id,
     )
     return result
