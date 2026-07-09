@@ -40,6 +40,7 @@ class ErpPatientSelector {
    */
   async init() {
     try {
+      this._loadCookies();
       await this._loadSites();
       await this._loadVets();
       await this._loadAppointments();
@@ -76,6 +77,37 @@ class ErpPatientSelector {
   _getTodayString() {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  }
+
+  /**
+   * Save site and vet selections to cookies (90 days).
+   */
+  _saveCookies() {
+    const expires = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `erp_site_id=${this.selectedSiteId}; expires=${expires}; path=/`;
+    if (this.selectedVetId) {
+      document.cookie = `erp_vet_id=${this.selectedVetId}; expires=${expires}; path=/`;
+    } else {
+      document.cookie = `erp_vet_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+    }
+  }
+
+  /**
+   * Load site and vet selections from cookies.
+   */
+  _loadCookies() {
+    const cookies = Object.fromEntries(
+      document.cookie.split(';').map(c => {
+        const [k, v] = c.trim().split('=');
+        return [decodeURIComponent(k), decodeURIComponent(v || '')];
+      })
+    );
+    if (cookies.erp_site_id) {
+      this.selectedSiteId = parseInt(cookies.erp_site_id) || this.defaultSiteId;
+    }
+    if (cookies.erp_vet_id && cookies.erp_vet_id !== '') {
+      this.selectedVetId = cookies.erp_vet_id;
+    }
   }
 
   /**
@@ -222,6 +254,7 @@ class ErpPatientSelector {
     if (siteSelect) {
       siteSelect.addEventListener('change', async (e) => {
         this.selectedSiteId = parseInt(e.target.value) || this.defaultSiteId;
+        this._saveCookies();
         await this._loadAppointments();
         this._renderAppointments();
       });
@@ -229,7 +262,8 @@ class ErpPatientSelector {
 
     if (vetSelect) {
       vetSelect.addEventListener('change', (e) => {
-        this.selectedVetId = e.target.value ? parseInt(e.target.value) : null;
+        this.selectedVetId = e.target.value || null;
+        this._saveCookies();
         this._filterAndRenderAppointments();
       });
     }
@@ -318,10 +352,9 @@ class ErpPatientSelector {
       .map((site) => `<option value="${site.id}">${site.nom}</option>`)
       .join('');
 
-    // Select default site
-    if (this.defaultSiteId) {
-      siteSelect.value = this.defaultSiteId;
-      this.selectedSiteId = this.defaultSiteId;
+    // Select site (use selectedSiteId which may be from cookie)
+    if (this.selectedSiteId) {
+      siteSelect.value = this.selectedSiteId;
     }
   }
 
@@ -337,6 +370,11 @@ class ErpPatientSelector {
       this.vets
         .map((vet) => `<option value="${vet.id}">${vet.nom}</option>`)
         .join('');
+
+    // Pre-select vet from cookie if available
+    if (this.selectedVetId) {
+      vetSelect.value = this.selectedVetId;
+    }
   }
 
   /**
@@ -345,9 +383,9 @@ class ErpPatientSelector {
   _filterAndRenderAppointments() {
     let filtered = this.appointments;
 
-    // Filter by vet if selected
+    // Filter by vet if selected (use string comparison to handle type coercion)
     if (this.selectedVetId) {
-      filtered = filtered.filter((apt) => apt.vet_id === this.selectedVetId);
+      filtered = filtered.filter((apt) => String(apt.vet_id) === String(this.selectedVetId));
     }
 
     // Render

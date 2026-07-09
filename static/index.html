@@ -627,8 +627,33 @@
                 <h2>📋 Étape 5 — Résumé & Consultation</h2>
                 <div id="recap-content"></div>
                 <div class="form-group">
-                    <label for="notes-textarea">Notes libres (optionnel)</label>
-                    <textarea id="notes-textarea" placeholder="Remarques supplémentaires..."></textarea>
+                    <label for="cr-diagnostic">Diagnostic avec localisation</label>
+                    <textarea id="cr-diagnostic" placeholder="Ex: Rupture partielle LCA genou droit" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cr-traitement-medical">Traitement médical en cours</label>
+                    <textarea id="cr-traitement-medical" placeholder="Médicaments, anti-inflammatoires..." rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cr-commemoratif">Commémoratif avec progression constatée</label>
+                    <textarea id="cr-commemoratif" placeholder="Historique et évolution depuis la dernière séance..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cr-observation">Observation de la séance et progression constatée</label>
+                    <textarea id="cr-observation" placeholder="Déroulement de la séance, réactions, améliorations..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cr-programme">Programme et séances à venir</label>
+                    <textarea id="cr-programme" placeholder="Ex: ODC 3 - Prochaine séance dans 3 semaines" rows="2"></textarea>
+                </div>
+                <div class="form-group" style="display:flex; gap:16px; align-items:center;">
+                    <label style="margin:0;">Contrôle prévu :</label>
+                    <label><input type="radio" name="cr-controle" value="oui" checked> Oui</label>
+                    <label><input type="radio" name="cr-controle" value="non"> Non</label>
+                </div>
+                <div class="form-group">
+                    <label for="cr-reglement">Règlement / Devis</label>
+                    <textarea id="cr-reglement" placeholder="Informations de paiement, devis..." rows="2"></textarea>
                 </div>
                 <div id="summary-feedback"></div>
                 <div class="button-group">
@@ -1050,11 +1075,29 @@
             feedback.innerHTML = '<div class="feedback success"><span class="spinner" style="display: inline-block; margin-right: 8px;"></span> Création en cours...</div>';
 
             try {
-                // Capture notes from textarea
-                state.notes = document.getElementById('notes-textarea').value || '';
+                // Capture structured fields from 7 sections
+                const diagnostic = document.getElementById('cr-diagnostic').value.trim();
+                const traitementMedical = document.getElementById('cr-traitement-medical').value.trim();
+                const commemoratif = document.getElementById('cr-commemoratif').value.trim();
+                const observation = document.getElementById('cr-observation').value.trim();
+                const programme = document.getElementById('cr-programme').value.trim();
+                const controle = document.querySelector('input[name="cr-controle"]:checked')?.value || 'non';
+                const reglement = document.getElementById('cr-reglement').value.trim();
 
-                // Build consultation synthèse
-                const synthese = `Consultation chirurgicale\n\nPatient: ${state.animal?.nom} (${state.animal?.espece})\nActe: ${state.act?.name}\nProtocole anesthésie: ${state.protocol}\n\nNotes: ${state.notes}`;
+                // Build consultation synthèse with CRLF for VetoPartner
+                const CRLF = '\r\n';
+                const sections = [];
+
+                sections.push(`Acte: ${state.act?.name || 'Consultation'}${CRLF}Patient: ${state.animal?.nom || state.animal?.nomanimal} (${state.animal?.espece}, ${state.poids || '?'} kg)`);
+                if (diagnostic) sections.push(`Diagnostic avec localisation:${CRLF}${diagnostic}`);
+                if (traitementMedical) sections.push(`Traitement médical en cours:${CRLF}${traitementMedical}`);
+                if (commemoratif) sections.push(`Commémoratif avec progression constatée:${CRLF}${commemoratif}`);
+                if (observation) sections.push(`Observation de la séance et progression constatée:${CRLF}${observation}`);
+                if (programme) sections.push(`Programme et séances à venir:${CRLF}${programme}`);
+                sections.push(`Contrôle prévu: ${controle}`);
+                if (reglement) sections.push(`Règlement / Devis:${CRLF}${reglement}`);
+
+                const synthese = sections.join(CRLF + CRLF);
 
                 // Create consultation
                 const consultResp = await fetch(`${API_BASE}/dashboard/consultation`, {
