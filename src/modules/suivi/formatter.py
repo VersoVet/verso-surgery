@@ -16,7 +16,7 @@ def format_consultation(tracking: SuiviTracking) -> str:
     sections = []
 
     # En-tête
-    header = f"Patient: {tracking.animal_nom} ({tracking.espece}, {tracking.poids_kg} kg) — {tracking.date_rdv}"
+    header = f"Patient: {tracking.animal_nom} ({tracking.espece}, {tracking.poids_kg} kg) - {tracking.date_rdv}"
     sections.append(header)
 
     # Anesthésie réalisée
@@ -32,7 +32,7 @@ def format_consultation(tracking: SuiviTracking) -> str:
                 volume = f"{dose.get('volume_ml', 0):.2f}"
                 route = dose.get("route", "?")
                 phase = dose.get("phase", "?")
-                anesth_section += f"{CRLF}- {dose.get('commercial', '?')}: {volume} mL {route} — {phase}"
+                anesth_section += f"{CRLF}- {dose.get('commercial', '?')}: {volume} mL {route} - {phase}"
 
         sections.append(anesth_section)
 
@@ -43,7 +43,7 @@ def format_consultation(tracking: SuiviTracking) -> str:
         actes_section = "ACTES RÉALISÉS:"
         for act in actes_data.get("actes", []):
             act_name = act.get("act_name", "Acte inconnu")
-            actes_section += f"{CRLF}→ {act_name}"
+            actes_section += f"{CRLF}-> {act_name}"
 
             fields = act.get("fields", {})
             for field_id, value in fields.items():

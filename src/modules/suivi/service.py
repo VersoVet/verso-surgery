@@ -197,6 +197,7 @@ async def process_anesthesie(req: AnesthesieRequest) -> dict[str, Any]:
     # Sauvegarder dans le tracking
     tracking.current_stage = "anesthesie"
     tracking.updated_at = now
+    tracking.poids_kg = req.poids_kg
     tracking.stages["anesthesie"] = SuiviStageData(
         status=StageStatus.DONE,
         timestamp=now,
