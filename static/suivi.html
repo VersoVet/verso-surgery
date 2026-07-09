@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>verso-surgery — Suivi de Prise en Charge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #F9FAFB;
+            color: #1F2937;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* === Header === */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        select, input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        select:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background-color: #F3F4F6;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* === Appointments List === */
+        .appointments-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .appointment-card {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .appointment-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-info {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .card-time {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4F46E5;
+            min-width: 50px;
+        }
+
+        .card-animal {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-animal-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .card-animal-client {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-done {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-in-progress {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        /* === Timeline === */
+        .timeline {
+            display: flex;
+            gap: 0;
+            margin-top: 16px;
+            background: #F9FAFB;
+            border-radius: 6px;
+            padding: 12px;
+            align-items: center;
+        }
+
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .stage:hover {
+            background-color: #E5E7EB;
+        }
+
+        .stage-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #D1D5DB;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stage-dot.pending {
+            border-color: #D1D5DB;
+            background: white;
+            color: #9CA3AF;
+        }
+
+        .stage-dot.done {
+            border-color: #4F46E5;
+            background: #4F46E5;
+            color: white;
+        }
+
+        .stage-dot.current {
+            border-color: #10B981;
+            background: #10B981;
+            color: white;
+        }
+
+        .stage-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .stage-connector {
+            flex: 0.5;
+            height: 2px;
+            background: #D1D5DB;
+            margin: 0 8px;
+        }
+
+        .stage-connector.active {
+            background: #4F46E5;
+        }
+
+        .stage:last-child .stage-connector {
+            display: none;
+        }
+
+        /* === Modals === */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1F2937;
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid #E5E7EB;
+            padding-top: 16px;
+        }
+
+        /* === Form Elements === */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4F46E5;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input[type="number"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input[type="number"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* === Tabs (Anesthésie) === */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6B7280;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #4F46E5;
+            border-bottom-color: #4F46E5;
+        }
+
+        /* === Doses Table === */
+        .doses-table {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: collapse;
+        }
+
+        .doses-table th {
+            background: #F9FAFB;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4F46E5;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .doses-table td {
+            padding: 10px;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 13px;
+        }
+
+        .doses-table input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .doses-table input[type="number"] {
+            width: 60px;
+            padding: 4px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+        }
+
+        /* === Buttons === */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4F46E5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338CA;
+        }
+
+        .btn-secondary {
+            background: #E5E7EB;
+            color: #1F2937;
+        }
+
+        .btn-secondary:hover {
+            background: #D1D5DB;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* === Acts Selection === */
+        .acts-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .act-card {
+            padding: 12px;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .act-card:hover {
+            border-color: #4F46E5;
+            background: #F9FAFB;
+        }
+
+        .act-card.selected {
+            border-color: #4F46E5;
+            background: #EEF2FF;
+        }
+
+        .act-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .act-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .selected-acts {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .selected-act-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .selected-act-header {
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-act-btn {
+            background: #FEE2E2;
+            color: #DC2626;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* === Loading === */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6B7280;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #E5E7EB;
+            border-top-color: #4F46E5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === Empty State === */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #9CA3AF;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 Suivi de Prise en Charge</h1>
+            <div class="header-controls">
+                <label>
+                    Site:
+                    <select id="site-select" onchange="window.changeSite()">
+                        <option value="">Chargement...</option>
+                    </select>
+                </label>
+                <label>
+                    Date:
+                    <input type="date" id="date-input" onchange="window.changeDate()">
+                </label>
+                <button class="refresh-btn" onclick="window.refreshData()">
+                    <span class="refresh-indicator" id="refresh-indicator"></span>
+                    Auto (30s)
+                </button>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        <div id="appointments-container" class="appointments-list"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Chargement...</p>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <div class="empty-state-icon">📅</div>
+            <p>Aucun rendez-vous pour cette date</p>
+        </div>
+    </div>
+
+    <!-- Modal Anesthésie -->
+    <div id="modal-anesthesie" class="modal" onclick="if(event.target===this) window.closeModalAnesthesie()">
+        <div class="modal-content">
+            <div class="modal-header">💉 Anesthésie</div>
+            <div class="modal-body">
+                <div class="tabs" id="protocol-tabs"></div>
+                <div class="form-group">
+                    <label for="anesth-weight">Poids de l'animal (kg)</label>
+                    <input type="number" id="anesth-weight" step="0.1" min="0" onchange="window.updateDosesTable()">
+                </div>
+                <table class="doses-table" id="doses-table">
+                    <thead>
+                        <tr>
+                            <th>Médicament</th>
+                            <th>Dose</th>
+                            <th>Volume</th>
+                            <th>Route</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody id="doses-body"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.closeModalAnesthesie()">Annuler</button>
+                <button class="btn btn-primary" onclick="window.validateAnesthesie()">✓ Valider & Créer Ordonnance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Actes/Soins -->
+    <div id="modal-actes" class="modal" onclick="if(event.target===this) window.closeModalActes()">
+        <div class="modal-content">
+            <div class="modal-header">⚕️ Actes / Soins</div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; font-size: 13px; color: #6B7280;">Sélectionner les actes à réaliser :</p>
+                <div class="acts-list" id="acts-cards-container"></div>
+                <div class="selected-acts" id="selected-acts-container" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.closeModalActes()">Annuler</button>
+                <button class="btn btn-primary" onclick="window.validateActes()">✓ Valider les actes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sortie -->
+    <div id="modal-sortie" class="modal" onclick="if(event.target===this) window.closeModalSortie()">
+        <div class="modal-content">
+            <div class="modal-header">📤 Sortie / Consultation</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="sortie-cr">Compte-rendu :</label>
+                    <textarea id="sortie-cr" placeholder="CR prévisionnalisé..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.closeModalSortie()">Annuler</button>
+                <button class="btn btn-primary" onclick="window.validateSortie()">✓ Créer Consultation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            siteId: 2,
+            date: getTodayString(),
+            appointments: [],
+            trackings: {},
+            protocols: [],
+            acts: [],
+            activeModal: null,
+            currentAppointmentId: null,
+            selectedProtocolId: null,
+            selectedActIds: new Set(),
+        };
+
+        let refreshTimer = null;
+        let autoRefreshEnabled = true;
+
+        // ===== Utilities =====
+
+        function getTodayString() {
+            const d = new Date();
+            return d.toISOString().split('T')[0];
+        }
+
+        function getDateString(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        async function apiFetch(url, opts = {}) {
+            try {
+                const response = await fetch(url, opts);
+                return await response.json();
+            } catch (e) {
+                console.error('API error:', e);
+                return { error: String(e) };
+            }
+        }
+
+        // ===== API Calls =====
+
+        window.loadAppointments = async function() {
+            const params = new URLSearchParams({
+                date_from: state.date,
+                date_to: state.date,
+                site_id: state.siteId,
+            });
+            const data = await apiFetch(`/api/dashboard/appointments?${params}`);
+            state.appointments = data.appointments || [];
+            console.log(`✓ Loaded ${state.appointments.length} appointments`);
+        };
+
+        window.loadTrackings = async function() {
+            const data = await apiFetch(`/api/suivi/tracking?date=${state.date}`);
+            state.trackings = {};
+            (data.trackings || []).forEach(t => {
+                state.trackings[t.appointment_id] = t;
+            });
+            console.log(`✓ Loaded ${Object.keys(state.trackings).length} trackings`);
+        };
+
+        window.loadSites = async function() {
+            const data = await apiFetch('/api/dashboard/sites');
+            const sites = data.sites || [];
+            const select = document.getElementById('site-select');
+            select.innerHTML = sites.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
+            if (sites.length > 0) {
+                select.value = state.siteId;
+            }
+        };
+
+        window.loadProtocols = async function() {
+            const data = await apiFetch('/api/suivi/protocoles');
+            state.protocols = data.protocoles || [];
+            console.log(`✓ Loaded ${state.protocols.length} protocols`);
+        };
+
+        window.loadActs = async function() {
+            const data = await apiFetch('/api/dashboard/acts');
+            state.acts = data.acts || [];
+            console.log(`✓ Loaded ${state.acts.length} acts`);
+        };
+
+        // ===== Rendering =====
+
+        function renderAppointments() {
+            const container = document.getElementById('appointments-container');
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('empty-state');
+
+            if (state.appointments.length === 0) {
+                container.innerHTML = '';
+                loading.classList.remove('show');
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = state.appointments.map(appt => renderAppointmentCard(appt)).join('');
+        }
+
+        function renderAppointmentCard(appt) {
+            const tracking = state.trackings[appt.id];
+            const time = appt.datetime_consult ? appt.datetime_consult.substring(11, 16) : '--:--';
+            const status = tracking ? tracking.current_stage : 'arrivee';
+            const statusLabel = getStatusLabel(status);
+            const statusClass = getStatusClass(status);
+
+            return `
+                <div class="appointment-card">
+                    <div class="card-header">
+                        <div class="card-info">
+                            <div class="card-time">${time}</div>
+                            <div class="card-animal">
+                                <div class="card-animal-name">${appt.animal_nom} (${appt.espece})</div>
+                                <div class="card-animal-client">${appt.client_prenom} ${appt.client_nom}</div>
+                            </div>
+                        </div>
+                        <div class="status-badge status-${statusClass}">${statusLabel}</div>
+                    </div>
+                    <div class="timeline">
+                        ${renderTimeline(appt, tracking)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTimeline(appt, tracking) {
+            const stages = ['arrivee', 'anesthesie', 'actes', 'sortie'];
+            const stageNames = {
+                arrivee: 'Arrivée',
+                anesthesie: 'Anesthésie',
+                actes: 'Actes',
+                sortie: 'Sortie',
+            };
+
+            let html = '';
+            stages.forEach((stage, idx) => {
+                const stageData = tracking ? tracking.stages[stage] : null;
+                const status = stageData ? stageData.status : 'pending';
+                const dotClass = status === 'done' ? 'done' : status === 'in_progress' ? 'current' : 'pending';
+
+                html += `
+                    <div class="stage" onclick="window.handleStageClick('${appt.id}', '${stage}')">
+                        <div class="stage-dot ${dotClass}">●</div>
+                        <div class="stage-label">${stageNames[stage]}</div>
+                    </div>
+                `;
+
+                if (idx < stages.length - 1) {
+                    const nextStage = stages[idx + 1];
+                    const nextStageData = tracking ? tracking.stages[nextStage] : null;
+                    const nextStatus = nextStageData ? nextStageData.status : 'pending';
+                    const connectorActive = nextStatus === 'done' ? 'active' : '';
+                    html += `<div class="stage-connector ${connectorActive}"></div>`;
+                }
+            });
+
+            return html;
+        }
+
+        function getStatusLabel(stage) {
+            const labels = {
+                arrivee: 'Absent',
+                anesthesie: 'En attente',
+                actes: 'En cours',
+                sortie: 'Sortie',
+                termine: 'Terminé',
+            };
+            return labels[stage] || 'Unknown';
+        }
+
+        function getStatusClass(stage) {
+            if (stage === 'termine') return 'done';
+            if (stage === 'arrivee') return 'pending';
+            if (stage === 'anesthesie') return 'in-progress';
+            return 'pending';
+        }
+
+        // ===== Stage Handlers =====
+
+        window.handleStageClick = async function(appointmentId, stage) {
+            const tracking = state.trackings[appointmentId];
+            const stageData = tracking ? tracking.stages[stage] : null;
+
+            if (stage === 'arrivee') {
+                await handleArrivee(appointmentId);
+            } else if (stage === 'anesthesie') {
+                openModalAnesthesie(appointmentId);
+            } else if (stage === 'actes') {
+                openModalActes(appointmentId);
+            } else if (stage === 'sortie') {
+                await openModalSortie(appointmentId);
+            }
+        };
+
+        async function handleArrivee(appointmentId) {
+            const appt = state.appointments.find(a => a.id === appointmentId);
+            if (!appt) return;
+
+            const payload = {
+                appointment_id: String(appointmentId),
+                animal_id: appt.animal_id,
+                animal_nom: appt.animal_nom,
+                espece: appt.espece,
+                poids_kg: appt.poids || 0,
+                client_nom: appt.client_nom || '',
+                client_prenom: appt.client_prenom || '',
+                vet_id: appt.vet_id ? parseInt(appt.vet_id) : null,
+                site_id: state.siteId,
+                date_rdv: state.date,
+            };
+
+            const result = await apiFetch('/api/suivi/arrivee', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (result.success && result.tracking) {
+                state.trackings[appointmentId] = result.tracking;
+                renderAppointments();
+            }
+        }
+
+        function openModalAnesthesie(appointmentId) {
+            state.currentAppointmentId = appointmentId;
+            state.selectedProtocolId = null;
+            state.selectedActIds.clear();
+
+            // Populate weight
+            const appt = state.appointments.find(a => a.id === appointmentId);
+            document.getElementById('anesth-weight').value = appt?.poids || 0;
+
+            // Render protocol tabs
+            const tabsContainer = document.getElementById('protocol-tabs');
+            tabsContainer.innerHTML = state.protocols.map(p =>
+                `<button class="tab-btn" onclick="window.selectProtocol('${p.id}')">${p.name}</button>`
+            ).join('');
+
+            document.getElementById('modal-anesthesie').classList.add('open');
+        }
+
+        window.selectProtocol = function(protocolId) {
+            state.selectedProtocolId = protocolId;
+
+            // Update active tab
+            document.querySelectorAll('#protocol-tabs .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            window.updateDosesTable();
+        };
+
+        window.updateDosesTable = function() {
+            if (!state.selectedProtocolId) return;
+
+            const protocol = state.protocols.find(p => p.id === state.selectedProtocolId);
+            const weight = parseFloat(document.getElementById('anesth-weight').value) || 0;
+
+            if (!protocol || weight <= 0) {
+                document.getElementById('doses-body').innerHTML = '<tr><td colspan="5">Saisissez un poids valide</td></tr>';
+                return;
+            }
+
+            const doses = calculateDoses(protocol, weight);
+            const tbody = document.getElementById('doses-body');
+            tbody.innerHTML = doses.map((dose, idx) => `
+                <tr>
+                    <td>${dose.commercial}</td>
+                    <td>${dose.dose_mg.toFixed(2)} mg</td>
+                    <td><input type="number" step="0.01" value="${dose.volume_ml}" data-idx="${idx}" class="dose-volume"></td>
+                    <td>${dose.route}</td>
+                    <td><input type="checkbox" ${dose.selected ? 'checked' : ''} data-idx="${idx}" class="dose-checkbox"></td>
+                </tr>
+            `).join('');
+        };
+
+        function calculateDoses(protocol, poids_kg) {
+            const doses = [];
+            protocol.drugs.forEach(drug => {
+                if (drug.dose === 0) {
+                    doses.push({
+                        name: drug.name,
+                        commercial: drug.commercial,
+                        dose_mg: 0,
+                        volume_ml: 0,
+                        route: drug.route,
+                        phase: drug.phase,
+                        optional: drug.optional,
+                        code_central: drug.code_central,
+                        selected: !drug.optional,
+                    });
+                    return;
+                }
+                const dose_mg = drug.dose * poids_kg;
+                const volume_ml = dose_mg / drug.concentration;
+                doses.push({
+                    name: drug.name,
+                    commercial: drug.commercial,
+                    dose_mg: parseFloat(dose_mg.toFixed(2)),
+                    volume_ml: parseFloat(volume_ml.toFixed(2)),
+                    route: drug.route,
+                    phase: drug.phase,
+                    optional: drug.optional,
+                    code_central: drug.code_central,
+                    selected: !drug.optional,
+                });
+            });
+            return doses;
+        }
+
+        window.validateAnesthesie = async function() {
+            const weight = parseFloat(document.getElementById('anesth-weight').value);
+            if (!weight || weight <= 0) {
+                alert('Poids invalide');
+                return;
+            }
+
+            const doses = [];
+            document.querySelectorAll('.doses-table tbody tr').forEach((tr, idx) => {
+                const volumeInput = tr.querySelector('.dose-volume');
+                const checkbox = tr.querySelector('.dose-checkbox');
+                const drugs = state.protocols.find(p => p.id === state.selectedProtocolId)?.drugs || [];
+                const drug = drugs[idx];
+
+                if (!drug) return;
+
+                doses.push({
+                    name: drug.name,
+                    commercial: drug.commercial,
+                    concentration: drug.concentration,
+                    volume_ml: parseFloat(volumeInput.value) || 0,
+                    dose_mg: (parseFloat(volumeInput.value) || 0) * drug.concentration,
+                    route: drug.route,
+                    phase: drug.phase,
+                    optional: drug.optional,
+                    code_central: drug.code_central,
+                    selected: checkbox.checked,
+                });
+            });
+
+            const payload = {
+                appointment_id: String(state.currentAppointmentId),
+                protocol_id: state.selectedProtocolId,
+                poids_kg: weight,
+                doses: doses,
+                site_id: state.siteId,
+            };
+
+            const result = await apiFetch('/api/suivi/anesthesie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (result.success && result.tracking) {
+                state.trackings[state.currentAppointmentId] = result.tracking;
+                renderAppointments();
+                window.closeModalAnesthesie();
+            } else {
+                alert(`Erreur: ${result.error}`);
+            }
+        };
+
+        window.closeModalAnesthesie = function() {
+            document.getElementById('modal-anesthesie').classList.remove('open');
+        };
+
+        function openModalActes(appointmentId) {
+            state.currentAppointmentId = appointmentId;
+            state.selectedActIds.clear();
+
+            const container = document.getElementById('acts-cards-container');
+            container.innerHTML = state.acts.map(act => `
+                <div class="act-card" onclick="window.toggleAct('${act.id}', '${act.name}')">
+                    <div class="act-icon">${act.icon || '⚕️'}</div>
+                    <div class="act-name">${act.name}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-actes').classList.add('open');
+        }
+
+        window.toggleAct = function(actId, actName) {
+            if (state.selectedActIds.has(actId)) {
+                state.selectedActIds.delete(actId);
+            } else {
+                state.selectedActIds.add(actId);
+            }
+
+            // Update card visual
+            document.querySelectorAll('.act-card').forEach(card => {
+                if (card.textContent.includes(actName)) {
+                    card.classList.toggle('selected');
+                }
+            });
+
+            renderSelectedActs();
+        };
+
+        function renderSelectedActs() {
+            const container = document.getElementById('selected-acts-container');
+            if (state.selectedActIds.size === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            let html = '';
+            state.selectedActIds.forEach(actId => {
+                const act = state.acts.find(a => a.id === actId);
+                if (!act) return;
+
+                html += `<div class="selected-act-item">
+                    <div class="selected-act-header">
+                        ${act.name}
+                        <button class="remove-act-btn" onclick="window.toggleAct('${actId}', '${act.name}')">Retirer</button>
+                    </div>
+                `;
+
+                if (act.fields && act.fields.length > 0) {
+                    html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
+                    act.fields.forEach(field => {
+                        if (field.type === 'text' || field.type === 'number') {
+                            html += `<input type="${field.type}" placeholder="${field.label}" data-act="${actId}" data-field="${field.id}">`;
+                        } else if (field.type === 'textarea') {
+                            html += `<textarea placeholder="${field.label}" style="grid-column: 1/-1;" data-act="${actId}" data-field="${field.id}"></textarea>`;
+                        }
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        window.closeModalActes = function() {
+            document.getElementById('modal-actes').classList.remove('open');
+        };
+
+        window.validateActes = async function() {
+            const actes = [];
+            state.selectedActIds.forEach(actId => {
+                const act = state.acts.find(a => a.id === actId);
+                if (!act) return;
+
+                const actData = {
+                    act_id: actId,
+                    act_name: act.name,
+                    fields: {},
+                };
+
+                (act.fields || []).forEach(field => {
+                    const inputs = document.querySelectorAll(`[data-act="${actId}"][data-field="${field.id}"]`);
+                    inputs.forEach(input => {
+                        actData.fields[field.label] = input.value || '';
+                    });
+                });
+
+                actes.push(actData);
+            });
+
+            const payload = {
+                appointment_id: String(state.currentAppointmentId),
+                actes: actes,
+            };
+
+            const result = await apiFetch('/api/suivi/actes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (result.success && result.tracking) {
+                state.trackings[state.currentAppointmentId] = result.tracking;
+                renderAppointments();
+                window.closeModalActes();
+            } else {
+                alert(`Erreur: ${result.error}`);
+            }
+        };
+
+        async function openModalSortie(appointmentId) {
+            state.currentAppointmentId = appointmentId;
+
+            // Get preview
+            const preview = await apiFetch(`/api/suivi/preview/${appointmentId}`);
+            document.getElementById('sortie-cr').value = preview.preview || '';
+
+            document.getElementById('modal-sortie').classList.add('open');
+        }
+
+        window.closeModalSortie = function() {
+            document.getElementById('modal-sortie').classList.remove('open');
+        };
+
+        window.validateSortie = async function() {
+            const synthese = document.getElementById('sortie-cr').value;
+
+            const payload = {
+                appointment_id: String(state.currentAppointmentId),
+                synthese: synthese,
+                site_id: state.siteId,
+            };
+
+            const result = await apiFetch('/api/suivi/sortie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (result.success && result.tracking) {
+                state.trackings[state.currentAppointmentId] = result.tracking;
+                renderAppointments();
+                window.closeModalSortie();
+            } else {
+                alert(`Erreur: ${result.error}`);
+            }
+        };
+
+        // ===== Controls =====
+
+        window.changeSite = function() {
+            state.siteId = parseInt(document.getElementById('site-select').value) || 2;
+            window.refreshData();
+        };
+
+        window.changeDate = function() {
+            state.date = document.getElementById('date-input').value;
+            window.refreshData();
+        };
+
+        window.refreshData = async function() {
+            document.getElementById('loading').classList.add('show');
+            await Promise.all([
+                window.loadAppointments(),
+                window.loadTrackings(),
+            ]);
+            renderAppointments();
+            document.getElementById('loading').classList.remove('show');
+        };
+
+        // ===== Auto-refresh =====
+
+        function startAutoRefresh() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            refreshTimer = setInterval(() => {
+                if (autoRefreshEnabled) {
+                    window.refreshData();
+                }
+            }, 30000);
+        }
+
+        // ===== Init =====
+
+        async function init() {
+            document.getElementById('date-input').value = state.date;
+            await Promise.all([
+                window.loadSites(),
+                window.loadProtocols(),
+                window.loadActs(),
+                window.loadAppointments(),
+                window.loadTrackings(),
+            ]);
+            renderAppointments();
+            startAutoRefresh();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

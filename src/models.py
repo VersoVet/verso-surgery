@@ -1,5 +1,8 @@
 """Modèles de données pour verso-surgery."""
 
+from enum import StrEnum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -95,5 +98,112 @@ class CreateOrdonnanceRequest(BaseModel):
 
     animal_id: int
     lignes: list[OrdonnanceLigne]
+    veto_id: int | None = None
+    site_id: int = 2
+
+
+# ===== SUIVI MODULE =====
+
+
+class StageStatus(StrEnum):
+    """Statut d'une étape de suivi."""
+
+    PENDING = "pending"
+    DONE = "done"
+    SKIPPED = "skipped"
+
+
+class SuiviStageData(BaseModel):
+    """Données d'une étape de suivi."""
+
+    status: StageStatus = StageStatus.PENDING
+    timestamp: str | None = None
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+class SuiviTracking(BaseModel):
+    """État de suivi d'un rendez-vous."""
+
+    appointment_id: str
+    animal_id: int
+    animal_nom: str
+    espece: str
+    poids_kg: float
+    client_nom: str
+    client_prenom: str
+    vet_id: int | None = None
+    site_id: int = 2
+    date_rdv: str
+    created_at: str
+    updated_at: str
+    current_stage: str = "arrivee"
+    stages: dict[str, SuiviStageData] = Field(default_factory=dict)
+
+
+class SuiviDrug(BaseModel):
+    """Médicament dans protocole suivi."""
+
+    name: str
+    commercial: str
+    concentration: float
+    unit: str
+    dose: float
+    dose_unit: str
+    dose_min: float = 0.0
+    dose_max: float = 0.0
+    route: str
+    phase: str
+    optional: bool = False
+    code_central: str | None = None
+
+
+class ProtocolSuivi(BaseModel):
+    """Protocole anesthésique pour suivi."""
+
+    id: str
+    name: str
+    description: str
+    species: list[str]
+    drugs: list[SuiviDrug]
+
+
+class ArriveRequest(BaseModel):
+    """Requête étape 1 — Arrivée."""
+
+    appointment_id: str
+    animal_id: int
+    animal_nom: str
+    espece: str
+    poids_kg: float
+    client_nom: str
+    client_prenom: str
+    vet_id: int | None = None
+    site_id: int = 2
+    date_rdv: str
+
+
+class AnesthesieRequest(BaseModel):
+    """Requête étape 2 — Anesthésie."""
+
+    appointment_id: str
+    protocol_id: str
+    poids_kg: float
+    doses: list[dict[str, Any]]
+    veto_id: int | None = None
+    site_id: int = 2
+
+
+class ActesRequest(BaseModel):
+    """Requête étape 3 — Actes/Soins."""
+
+    appointment_id: str
+    actes: list[dict[str, Any]]
+
+
+class SortieRequest(BaseModel):
+    """Requête étape 4 — Sortie consultation."""
+
+    appointment_id: str
+    synthese: str
     veto_id: int | None = None
     site_id: int = 2

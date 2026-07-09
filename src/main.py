@@ -16,6 +16,8 @@ from src.modules.animals.routes import router as animals_router
 from src.modules.dashboard.routes import router as dashboard_router
 from src.modules.prescriptions.routes import router as prescriptions_router
 from src.modules.protocols.routes import router as protocols_router
+from src.modules.suivi.routes import router as suivi_router
+from src.modules.suivi.store import ensure_data_dir
 from src.modules.surgeries.routes import router as surgeries_router
 
 # Configuration logging
@@ -96,6 +98,9 @@ async def lifespan(app: FastAPI) -> Any:
         except Exception as e:
             logger.warning(f"OnyxClient start failed: {e}")
 
+    # Préparer les répertoires de données
+    ensure_data_dir()
+
     # Attendre les dépendances
     if not await wait_for_dependency("protocols", check_protocols):
         logger.error("Failed to load protocols")
@@ -148,6 +153,7 @@ app.include_router(animals_router)
 app.include_router(surgeries_router)
 app.include_router(prescriptions_router)
 app.include_router(dashboard_router)
+app.include_router(suivi_router)
 
 # Monter les fichiers statiques
 static_dir = Path(__file__).parent.parent / "static"
@@ -164,6 +170,17 @@ async def dashboard_page() -> FileResponse:
     """
     dashboard_file = Path(__file__).parent.parent / "static" / "index.html"
     return FileResponse(dashboard_file)
+
+
+@app.get("/suivi")
+async def suivi_page() -> FileResponse:
+    """Retourne la page de suivi de prise en charge.
+
+    Returns:
+        Page HTML du suivi.
+    """
+    suivi_file = Path(__file__).parent.parent / "static" / "suivi.html"
+    return FileResponse(suivi_file)
 
 
 @app.get("/health")

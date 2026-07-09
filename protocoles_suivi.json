@@ -1,0 +1,194 @@
+[
+  {
+    "id": "sedation_legere",
+    "name": "Sédation légère",
+    "description": "Examen, pansement, imagerie",
+    "species": ["chien", "chat"],
+    "drugs": [
+      {
+        "name": "Médétomidine",
+        "commercial": "SEDATOR",
+        "concentration": 1.0,
+        "unit": "mg/mL",
+        "dose": 0.015,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.01,
+        "dose_max": 0.04,
+        "route": "IM",
+        "phase": "prémédication",
+        "optional": false,
+        "code_central": "83453"
+      },
+      {
+        "name": "Butorphanol",
+        "commercial": "TORPHASOL",
+        "concentration": 10.0,
+        "unit": "mg/mL",
+        "dose": 0.3,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.2,
+        "dose_max": 0.4,
+        "route": "IM",
+        "phase": "analgésie",
+        "optional": true,
+        "code_central": "55052"
+      },
+      {
+        "name": "Atipamézole",
+        "commercial": "ANTIDOR",
+        "concentration": 5.0,
+        "unit": "mg/mL",
+        "dose": 0.075,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.05,
+        "dose_max": 0.1,
+        "route": "IM",
+        "phase": "antagoniste",
+        "optional": true,
+        "code_central": "23569"
+      }
+    ]
+  },
+  {
+    "id": "sedation_profonde",
+    "name": "Sédation profonde",
+    "description": "Chirurgie courte/moyenne — MK Standard",
+    "species": ["chien", "chat"],
+    "drugs": [
+      {
+        "name": "Médétomidine",
+        "commercial": "SEDATOR",
+        "concentration": 1.0,
+        "unit": "mg/mL",
+        "dose": 0.02,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.01,
+        "dose_max": 0.04,
+        "route": "IM",
+        "phase": "prémédication",
+        "optional": false,
+        "code_central": "83453"
+      },
+      {
+        "name": "Kétamine",
+        "commercial": "KETAMIDOR",
+        "concentration": 100.0,
+        "unit": "mg/mL",
+        "dose": 5.0,
+        "dose_unit": "mg/kg",
+        "dose_min": 3.0,
+        "dose_max": 8.0,
+        "route": "IM",
+        "phase": "induction",
+        "optional": false,
+        "code_central": "42438"
+      },
+      {
+        "name": "Butorphanol",
+        "commercial": "TORPHASOL",
+        "concentration": 10.0,
+        "unit": "mg/mL",
+        "dose": 0.3,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.2,
+        "dose_max": 0.4,
+        "route": "IM",
+        "phase": "analgésie",
+        "optional": true,
+        "code_central": "55052"
+      },
+      {
+        "name": "Diazépam",
+        "commercial": "DIAZEDOR",
+        "concentration": 5.0,
+        "unit": "mg/mL",
+        "dose": 0.2,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.1,
+        "dose_max": 0.4,
+        "route": "IV",
+        "phase": "relaxant",
+        "optional": true,
+        "code_central": "10576"
+      },
+      {
+        "name": "Atipamézole",
+        "commercial": "ANTIDOR",
+        "concentration": 5.0,
+        "unit": "mg/mL",
+        "dose": 0.1,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.05,
+        "dose_max": 0.2,
+        "route": "IM",
+        "phase": "antagoniste",
+        "optional": true,
+        "code_central": "23569"
+      }
+    ]
+  },
+  {
+    "id": "anesthesie_gazeuse",
+    "name": "Anesthésie gazeuse",
+    "description": "Propofol TIVA + entretien isoflurane — chirurgie longue",
+    "species": ["chien"],
+    "drugs": [
+      {
+        "name": "Médétomidine",
+        "commercial": "SEDATOR",
+        "concentration": 1.0,
+        "unit": "mg/mL",
+        "dose": 0.01,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.005,
+        "dose_max": 0.02,
+        "route": "IM",
+        "phase": "prémédication",
+        "optional": false,
+        "code_central": "83453"
+      },
+      {
+        "name": "Propofol",
+        "commercial": "PROPOMITOR",
+        "concentration": 10.0,
+        "unit": "mg/mL",
+        "dose": 4.0,
+        "dose_unit": "mg/kg",
+        "dose_min": 2.0,
+        "dose_max": 6.0,
+        "route": "IV lent",
+        "phase": "induction",
+        "optional": false,
+        "code_central": "14760"
+      },
+      {
+        "name": "Isoflurane",
+        "commercial": "Isoflo",
+        "concentration": 1000.0,
+        "unit": "mg/mL",
+        "dose": 0.0,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.0,
+        "dose_max": 0.0,
+        "route": "inhalé",
+        "phase": "entretien",
+        "optional": false,
+        "code_central": null
+      },
+      {
+        "name": "Atipamézole",
+        "commercial": "ANTIDOR",
+        "concentration": 5.0,
+        "unit": "mg/mL",
+        "dose": 0.05,
+        "dose_unit": "mg/kg",
+        "dose_min": 0.025,
+        "dose_max": 0.1,
+        "route": "IM",
+        "phase": "antagoniste",
+        "optional": true,
+        "code_central": "23569"
+      }
+    ]
+  }
+]
