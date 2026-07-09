@@ -131,6 +131,52 @@ FastAPI (port 8112)
   - Ajout dose_min, dose_max, optional, code_central
   - Fourchettes: Médétomidine 0.01–0.04, Kétamine 3–8, Butorphanol 0.2–0.4, etc.
 
+### 6. **suivi** — Dashboard de suivi journalier
+
+- **Service**: `SuiviService`
+  - Gère le workflow 4 étapes: Arrivée → Anesthésie → Actes → Sortie
+  - Persiste état JSON sur disque (/opt/onyx/data/verso-surgery/suivi/{appointment_id}.json)
+  - Calcul automatique des doses anesthésiques
+  - Génération de compte-rendu structuré (format CRLF)
+  - Création ordonnance anesthésique (étape 2)
+  - Création consultation VetoPartner (étape 4)
+
+- **Routes** (Préfixe `/api/suivi`):
+  - `GET /protocoles` — Liste des 3 protocoles anesthésiques suivi
+  - `GET /tracking` — Trackings du jour (JSON persisté)
+  - `GET /tracking/{appointment_id}` — Un tracking spécifique
+  - `DELETE /tracking/{appointment_id}` — Reset tracking
+  - `POST /arrivee` — Étape 1: créer/mettre à jour tracking
+  - `POST /anesthesie` — Étape 2: calcul doses + ordonnance ERP
+  - `POST /actes` — Étape 3: enregistrer actes sélectionnés
+  - `POST /sortie` — Étape 4: générer CR + consultation ERP
+  - `GET /preview/{appointment_id}` — Prévisualiser CR avant validation
+
+- **Modules**:
+  - `store.py`: Persistence JSON synchrone (< 100 lignes)
+  - `formatter.py`: Formatage CR structuré CRLF (< 80 lignes)
+  - `service.py`: Logique métier async (< 300 lignes)
+  - `routes.py`: Routes FastAPI (< 200 lignes)
+
+- **Frontend** (`static/suivi.html`):
+  - Vanilla JS, ~900 lignes
+  - Timeline avec 4 étapes (dots: pending/done/current)
+  - Modal Anesthésie: 3 tabs protocolos, calcul automatique doses, volumes éditables
+  - Modal Actes: sélection multi-actes avec formulaires dynamiques
+  - Modal Sortie: CR éditable avec aperçu avant création
+  - Auto-refresh toutes les 30s
+
+- **Protocoles** (`protocoles_suivi.json`):
+  - 3 protocoles: Sédation légère / Sédation profonde / Anesthésie gazeuse
+  - Chaque drogue: dose, dose_min, dose_max, code_central (pour ordonnance ERP)
+  - Drugs fournis: SEDATOR 83453, TORPHASOL 55052, ANTIDOR 23569, PROPOMITOR 14760, KETAMIDOR 42438, DIAZEDOR 10576
+
+- **Workflow**:
+  1. **Arrivée**: Créer tracking initial (animal info, poids, client)
+  2. **Anesthésie**: Sélectionner protocole, calcul doses, créer ordonnance ERP
+  3. **Actes**: Sélectionner actes + remplir formulaires
+  4. **Sortie**: Éditer CR, créer consultation ERP avec synthèse
+
 ## Points d'entrée
 
 ### Health Checks
@@ -215,16 +261,23 @@ FastAPI (port 8112)
 
 ## Tailles de fichiers
 
-- `src/main.py`: ~195 lignes ✓
-- `src/models.py`: ~65 lignes ✓
+- `src/main.py`: ~210 lignes ✓
+- `src/models.py`: ~180 lignes ✓
 - `src/modules/protocols/service.py`: ~97 lignes ✓
 - `src/modules/animals/service.py`: ~82 lignes ✓
 - `src/modules/surgeries/service.py`: ~110 lignes ✓
 - `src/modules/prescriptions/service.py`: ~172 lignes ✓
-- `src/modules/dashboard/service.py`: ~257 lignes (+ create_ordonnance) ✓
-- `src/modules/dashboard/routes.py`: ~180 lignes (+ /ordonnance endpoint, site_id) ✓
-- `static/index.html`: ~1225 lignes (vanilla JS, avec ordonnance) ✓
+- `src/modules/dashboard/service.py`: ~260 lignes (avec create_ordonnance, create_consultation) ✓
+- `src/modules/dashboard/routes.py`: ~190 lignes ✓
+- `src/modules/suivi/store.py`: ~100 lignes ✓
+- `src/modules/suivi/formatter.py`: ~80 lignes ✓
+- `src/modules/suivi/service.py`: ~295 lignes ✓
+- `src/modules/suivi/routes.py`: ~170 lignes ✓
+- `src/modules/suivi/tests/test_suivi.py`: ~10 lignes ✓
+- `static/index.html`: ~1225 lignes (vanilla JS, 5-step wizard) ✓
+- `static/suivi.html`: ~900 lignes (vanilla JS, timeline 4 étapes) ✓
 - `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, aucune dépendance) ✓
+- `protocoles_suivi.json`: ~400 lignes ✓
 - Routes: <200 lignes chacune ✓
 
 Tous les fichiers Python < 300 lignes (validations Forge).

@@ -154,9 +154,7 @@ async def process_arrivee(req: ArriveRequest) -> SuiviTracking:
         # Mettre à jour le tracking existant
         tracking.poids_kg = req.poids_kg
         tracking.updated_at = now
-        tracking.stages["arrivee"] = SuiviStageData(
-            status=StageStatus.DONE, timestamp=now, data={}
-        )
+        tracking.stages["arrivee"] = SuiviStageData(status=StageStatus.DONE, timestamp=now, data={})
 
     save_tracking(tracking)
     logger.info(f"Arrivée processed for appointment {req.appointment_id}")
@@ -262,16 +260,25 @@ async def process_sortie(req: SortieRequest) -> dict[str, Any]:
     if not tracking:
         return {"success": False, "error": "Tracking not found"}
 
+    # Valider la synthese
+    synthese = req.synthese.strip() if req.synthese else ""
+    if not synthese:
+        logger.warning(f"Empty synthese for appointment {req.appointment_id}")
+        return {"success": False, "error": "La synthèse ne peut pas être vide"}
+
+    logger.info(f"Processing sortie for appointment {req.appointment_id}, synthese length: {len(synthese)}")
+
     # Créer la consultation via DashboardService
     try:
         consult_result = await DashboardService.create_consultation(
             animal_id=tracking.animal_id,
-            synthese=req.synthese,
+            synthese=synthese,
             motif="Chirurgie / Suivi",
             veto_id=req.veto_id,
             site_id=req.site_id,
         )
         if not consult_result.get("success"):
+            logger.error(f"Consultation creation failed: {consult_result.get('error')}")
             return {
                 "success": False,
                 "error": f"Consultation creation failed: {consult_result}",

@@ -16,14 +16,12 @@ def format_consultation(tracking: SuiviTracking) -> str:
     sections = []
 
     # En-tête
-    header = (
-        f"Patient: {tracking.animal_nom} ({tracking.espece}, {tracking.poids_kg} kg) "
-        f"— {tracking.date_rdv}"
-    )
+    header = f"Patient: {tracking.animal_nom} ({tracking.espece}, {tracking.poids_kg} kg) — {tracking.date_rdv}"
     sections.append(header)
 
     # Anesthésie réalisée
-    anesth_data = tracking.stages.get("anesthesie", {}).data
+    anesth_stage = tracking.stages.get("anesthesie")
+    anesth_data = anesth_stage.data if anesth_stage else {}
     if anesth_data and anesth_data.get("doses"):
         anesth_section = "ANESTHÉSIE RÉALISÉE:"
         protocol_name = anesth_data.get("protocol_name", "Protocole inconnu")
@@ -34,14 +32,13 @@ def format_consultation(tracking: SuiviTracking) -> str:
                 volume = f"{dose.get('volume_ml', 0):.2f}"
                 route = dose.get("route", "?")
                 phase = dose.get("phase", "?")
-                anesth_section += (
-                    f"{CRLF}- {dose.get('commercial', '?')}: {volume} mL {route} — {phase}"
-                )
+                anesth_section += f"{CRLF}- {dose.get('commercial', '?')}: {volume} mL {route} — {phase}"
 
         sections.append(anesth_section)
 
     # Actes réalisés
-    actes_data = tracking.stages.get("actes", {}).data
+    actes_stage = tracking.stages.get("actes")
+    actes_data = actes_stage.data if actes_stage else {}
     if actes_data and actes_data.get("actes"):
         actes_section = "ACTES RÉALISÉS:"
         for act in actes_data.get("actes", []):

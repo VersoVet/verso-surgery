@@ -48,6 +48,30 @@
 - [x] Validation Forge: VALID (5 warnings)
 - [x] Déploiement v0.1.16 successful
 
+## ✅ Complété (v0.1.17 → v0.1.27) — Suivi de Prise en Charge
+
+### Suivi Module (Dashboard 4 étapes)
+- [x] Module suivi créé (store, formatter, service, routes)
+- [x] Persistence JSON sur disque (/opt/onyx/data/verso-surgery/suivi/)
+- [x] État de tracking complet (SuiviTracking model)
+- [x] Protocoles suivi (3 protocoles: sédation légère/profonde, anesthésie gazeuse)
+- [x] Calcul automatique des doses avec fourchettes
+- [x] Étape 1 (Arrivée): Créer/mettre à jour tracking
+- [x] Étape 2 (Anesthésie): Protocole selection + ordonnance ERP
+- [x] Étape 3 (Actes): Enregistrement actes avec formulaires dynamiques
+- [x] Étape 4 (Sortie): Génération CR + consultation ERP
+- [x] Formatage structuré CR (CRLF, sections séparées)
+- [x] Frontend suivi.html: timeline 4 étapes, modals interactifs
+- [x] Auto-refresh toutes les 30s
+- [x] Preview CR avant création consultation
+- [x] DashboardService logging amélioré (erreurs HTTP, synthese length)
+- [x] Validation suivi (synthese non vide)
+- [x] Tests unitaires suivi (test_ensure_data_dir)
+- [x] ARCHITECTURE.md mise à jour (module suivi)
+- [x] API.md mise à jour (endpoints suivi)
+- [x] Ruff linting complete
+- [x] Déploiement v0.1.27 successful
+
 ## 📋 À faire - Priorité haute
 
 ### erp-ui-sdk Library

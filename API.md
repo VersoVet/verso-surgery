@@ -294,6 +294,258 @@ curl -X POST "http://10.0.0.13:8112/api/dashboard/ordonnance" \
 
 ---
 
+## Suivi de Prise en Charge (Dashboard 4 étapes)
+
+Module de suivi journalier avec état persisté en JSON. Workflow: Arrivée → Anesthésie → Actes → Sortie.
+
+### GET /api/suivi/protocoles
+Liste tous les protocoles anesthésiques suivi.
+
+**Réponse**:
+```json
+{
+  "protocoles": [
+    {
+      "id": "sedation_legere",
+      "name": "Sédation légère",
+      "description": "Examen, pansement, imagerie",
+      "species": ["chien", "chat"],
+      "drugs": [
+        {
+          "name": "Médétomidine",
+          "commercial": "SEDATOR",
+          "concentration": 1.0,
+          "unit": "mg/mL",
+          "dose": 0.015,
+          "dose_unit": "mg/kg",
+          "dose_min": 0.01,
+          "dose_max": 0.04,
+          "route": "IM",
+          "phase": "prémédication",
+          "optional": false,
+          "code_central": "83453"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### GET /api/suivi/tracking
+Liste les trackings du jour (persistés en JSON).
+
+**Paramètres**:
+- `date` (query, optionnel): Date au format YYYY-MM-DD (défaut: aujourd'hui)
+
+**Exemple**:
+```bash
+curl "http://10.0.0.13:8112/api/suivi/tracking?date=2026-07-09"
+```
+
+**Réponse**:
+```json
+{
+  "trackings": [
+    {
+      "appointment_id": "180117",
+      "animal_id": 21923,
+      "animal_nom": "REGLISSE",
+      "espece": "Chien",
+      "poids_kg": 8.5,
+      "client_nom": "DUFOURMENTEL",
+      "client_prenom": "",
+      "date_rdv": "2026-07-09",
+      "current_stage": "anesthesie",
+      "stages": {
+        "arrivee": {"status": "done", "timestamp": "...", "data": {}},
+        "anesthesie": {"status": "done", "timestamp": "...", "data": {"protocol_id": "...", "doses": [...]}},
+        "actes": {"status": "pending", "timestamp": null, "data": {}},
+        "sortie": {"status": "pending", "timestamp": null, "data": {}}
+      }
+    }
+  ],
+  "date": "2026-07-09"
+}
+```
+
+### GET /api/suivi/tracking/{appointment_id}
+Récupère le tracking d'un rendez-vous spécifique.
+
+**Paramètres**:
+- `appointment_id` (path): ID du rendez-vous
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "tracking": { ... }
+}
+```
+
+**Erreur** (404):
+```json
+{
+  "detail": "Tracking not found"
+}
+```
+
+### DELETE /api/suivi/tracking/{appointment_id}
+Réinitialise/supprime le tracking d'un rendez-vous.
+
+**Paramètres**:
+- `appointment_id` (path): ID du rendez-vous
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "appointment_id": "180117"
+}
+```
+
+### POST /api/suivi/arrivee
+Étape 1 — Crée ou met à jour un tracking à l'arrivée.
+
+**Body (JSON)**:
+```json
+{
+  "appointment_id": "180117",
+  "animal_id": 21923,
+  "animal_nom": "REGLISSE",
+  "espece": "Chien",
+  "poids_kg": 8.5,
+  "client_nom": "DUFOURMENTEL",
+  "client_prenom": "",
+  "vet_id": null,
+  "site_id": 2,
+  "date_rdv": "2026-07-09"
+}
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "tracking": { ... }
+}
+```
+
+### POST /api/suivi/anesthesie
+Étape 2 — Sélectionne protocole et crée ordonnance dans VetoPartner.
+
+**Body (JSON)**:
+```json
+{
+  "appointment_id": "180117",
+  "protocol_id": "sedation_profonde",
+  "poids_kg": 8.5,
+  "doses": [
+    {
+      "name": "Médétomidine",
+      "commercial": "SEDATOR",
+      "volume_ml": 0.13,
+      "route": "IM",
+      "phase": "prémédication",
+      "selected": true,
+      "code_central": "83453"
+    }
+  ],
+  "veto_id": null,
+  "site_id": 2
+}
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "tracking": { ... },
+  "ordonnance_id": 12345
+}
+```
+
+**Erreur**:
+```json
+{
+  "success": false,
+  "error": "Ordonnance creation failed: ..."
+}
+```
+
+### POST /api/suivi/actes
+Étape 3 — Enregistre les actes chirurgicaux sélectionnés.
+
+**Body (JSON)**:
+```json
+{
+  "appointment_id": "180117",
+  "actes": [
+    {
+      "act_name": "Onde de choc",
+      "fields": {
+        "localisation": "Épaule droite",
+        "frequence": "4 Hz",
+        "pression": "2.5 bar"
+      }
+    }
+  ]
+}
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "tracking": { ... }
+}
+```
+
+### POST /api/suivi/sortie
+Étape 4 — Crée la consultation VetoPartner avec compte-rendu.
+
+**Body (JSON)**:
+```json
+{
+  "appointment_id": "180117",
+  "synthese": "Patient: REGLISSE (Chien, 8.5 kg) — 2026-07-09\r\n\r\nANESTHÉSIE RÉALISÉE: Sédation profonde\r\n- SEDATOR: 0.13 mL IM — prémédication\r\n\r\nACTES RÉALISÉS:\r\n→ Onde de choc (séance 1)\r\n  Localisation: Épaule droite",
+  "veto_id": null,
+  "site_id": 2
+}
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "tracking": { ... },
+  "consultation_id": 54321
+}
+```
+
+**Erreur**:
+```json
+{
+  "success": false,
+  "error": "Consultation creation failed: HTTP 500: ..."
+}
+```
+
+### GET /api/suivi/preview/{appointment_id}
+Prévisualise le compte-rendu avant validation (sans créer la consultation).
+
+**Paramètres**:
+- `appointment_id` (path): ID du rendez-vous
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "preview": "Patient: REGLISSE (Chien, 8.5 kg) — 2026-07-09\r\n\r\nANESTHÉSIE RÉALISÉE: ..."
+}
+```
+
+---
+
 ## Protocoles Anesthésiques
 
 ### GET /api/protocols/

@@ -146,9 +146,7 @@ class DashboardService:
         """
         try:
             client = ErpClient(base_url=cls.ERP_BASE_URL, timeout=cls.TIMEOUT)
-            appointments = await AppointmentService.get_range(
-                client, date_from, date_to, vet_id, site_id
-            )
+            appointments = await AppointmentService.get_range(client, date_from, date_to, vet_id, site_id)
             return {
                 "appointments": [apt.model_dump() for apt in appointments],
             }
@@ -188,6 +186,8 @@ class DashboardService:
                     body["veto_id"] = veto_id
                 if site_id is not None:
                     body["site_id"] = site_id
+
+                logger.debug(f"POST /consultations: animal_id={animal_id}, synthese_len={len(synthese)}, motif={motif}")
                 response = await client.post(
                     f"{cls.ERP_BASE_URL}/consultations",
                     json=body,
@@ -200,6 +200,14 @@ class DashboardService:
                     "consultation_id": result.get("id"),
                     "animal_id": animal_id,
                 }
+        except httpx.HTTPStatusError as e:
+            error_detail = f"HTTP {e.response.status_code}: {e.response.text[:200]}"
+            logger.error(f"Failed to create consultation: {error_detail}")
+            return {
+                "success": False,
+                "error": f"Erreur lors de création consultation: {error_detail}",
+                "consultation_id": None,
+            }
         except Exception as e:
             logger.error(f"Failed to create consultation: {e}")
             return {
