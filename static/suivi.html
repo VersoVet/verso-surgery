@@ -1065,13 +1065,24 @@
                 `;
 
                 if (act.fields && act.fields.length > 0) {
-                    html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
+                    html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">';
                     act.fields.forEach(field => {
+                        const defaultVal = field.default !== undefined ? field.default : '';
+                        const unitLabel = field.unit ? ` (${field.unit})` : '';
+                        const label = `<label style="font-size:12px; font-weight:500; color:#374151; margin-bottom:2px; display:block;">${field.label}${unitLabel}</label>`;
+                        let inputHtml = '';
+
                         if (field.type === 'text' || field.type === 'number') {
-                            html += `<input type="${field.type}" placeholder="${field.label}" data-act="${actId}" data-field="${field.id}">`;
+                            inputHtml = `<input type="${field.type}" placeholder="${field.placeholder || ''}" value="${defaultVal}" style="padding:4px 6px; border:1px solid #D1D5DB; border-radius:4px; font-size:13px;" data-act="${actId}" data-field="${field.id}">`;
                         } else if (field.type === 'textarea') {
-                            html += `<textarea placeholder="${field.label}" style="grid-column: 1/-1;" data-act="${actId}" data-field="${field.id}"></textarea>`;
+                            inputHtml = `<textarea placeholder="${field.placeholder || ''}" style="grid-column:1/-1; padding:4px 6px; border:1px solid #D1D5DB; border-radius:4px; font-size:13px; font-family:inherit; resize:vertical;" data-act="${actId}" data-field="${field.id}">${defaultVal}</textarea>`;
+                        } else if (field.type === 'select') {
+                            const options = (field.options || []).map(o => `<option value="${o.value}" ${o.value === String(defaultVal) ? 'selected' : ''}>${o.label}</option>`).join('');
+                            inputHtml = `<select style="padding:4px 6px; border:1px solid #D1D5DB; border-radius:4px; font-size:13px; background:#FFF;" data-act="${actId}" data-field="${field.id}"><option value="">Sélectionner...</option>${options}</select>`;
                         }
+
+                        const wrapStyle = field.type === 'textarea' ? 'grid-column:1/-1;' : '';
+                        html += `<div style="${wrapStyle}">${label}${inputHtml}</div>`;
                     });
                     html += '</div>';
                 }

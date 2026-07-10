@@ -68,7 +68,8 @@
         "type": "number",
         "unit": "Hz",
         "required": true,
-        "placeholder": "Ex: 4"
+        "placeholder": "Ex: 4",
+        "default": 4
       },
       {
         "id": "pression",
@@ -76,14 +77,16 @@
         "type": "number",
         "unit": "bar",
         "required": true,
-        "placeholder": "Ex: 2.5"
+        "placeholder": "Ex: 2.5",
+        "default": 1.5
       },
       {
         "id": "nb_coups",
         "label": "Nombre de coups",
         "type": "number",
         "required": true,
-        "placeholder": "Ex: 2000"
+        "placeholder": "Ex: 2000",
+        "default": 2000
       },
       {
         "id": "observations",
@@ -120,7 +123,8 @@
         "type": "number",
         "unit": "mL",
         "required": true,
-        "placeholder": "Ex: 10"
+        "placeholder": "Ex: 10",
+        "default": 10
       },
       {
         "id": "vol_prp",
@@ -128,7 +132,8 @@
         "type": "number",
         "unit": "mL",
         "required": true,
-        "placeholder": "Ex: 4"
+        "placeholder": "Ex: 4",
+        "default": 4
       },
       {
         "id": "vol_injecte",
@@ -136,13 +141,15 @@
         "type": "number",
         "unit": "mL",
         "required": true,
-        "placeholder": "Ex: 4"
+        "placeholder": "Ex: 4",
+        "default": 4
       },
       {
         "id": "technique",
         "label": "Technique d'injection",
         "type": "select",
         "required": true,
+        "default": "echographie",
         "options": [
           {"value": "echographie", "label": "Échographie"},
           {"value": "palpation", "label": "Palpation"}
@@ -190,7 +197,8 @@
         "type": "number",
         "unit": "Hz",
         "required": true,
-        "placeholder": "Ex: 4"
+        "placeholder": "Ex: 4",
+        "default": 4
       },
       {
         "id": "pression",
@@ -198,14 +206,16 @@
         "type": "number",
         "unit": "bar",
         "required": true,
-        "placeholder": "Ex: 2.5"
+        "placeholder": "Ex: 2.5",
+        "default": 1.5
       },
       {
         "id": "nb_coups",
         "label": "Nombre de coups",
         "type": "number",
         "required": true,
-        "placeholder": "Ex: 2000"
+        "placeholder": "Ex: 2000",
+        "default": 2000
       },
       {
         "id": "vol_rincage",
@@ -213,7 +223,8 @@
         "type": "number",
         "unit": "mL",
         "required": true,
-        "placeholder": "Ex: 100"
+        "placeholder": "Ex: 100",
+        "default": 100
       },
       {
         "id": "solution_rincage",
@@ -228,7 +239,8 @@
         "type": "number",
         "unit": "mL",
         "required": true,
-        "placeholder": "Ex: 3"
+        "placeholder": "Ex: 3",
+        "default": 3
       },
       {
         "id": "vol_injecte",
@@ -297,6 +309,7 @@
         "label": "Seringue de perfusion",
         "type": "select",
         "required": true,
+        "default": "50ml",
         "options": [
           {"value": "20ml", "label": "20 mL"},
           {"value": "50ml", "label": "50 mL"}
