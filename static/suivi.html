@@ -1212,10 +1212,22 @@
 
         async function init() {
             document.getElementById('date-input').value = state.date;
+            // Charger d'abord les données statiques (sites, protocoles, actes)
             await Promise.all([
                 window.loadSites(),
                 window.loadProtocols(),
                 window.loadActs(),
+            ]);
+            // Mettre à jour state.siteId avec la première option du select si nécessaire
+            const siteSelect = document.getElementById('site-select');
+            if (siteSelect && siteSelect.options.length > 0) {
+                const selectedValue = parseInt(siteSelect.value);
+                if (!isNaN(selectedValue)) {
+                    state.siteId = selectedValue;
+                }
+            }
+            // Puis charger les données dépendantes du site
+            await Promise.all([
                 window.loadAppointments(),
                 window.loadTrackings(),
             ]);
