@@ -342,11 +342,12 @@ def _build_ordonnance_lignes(doses: list[dict[str, Any]]) -> list[dict[str, Any]
         volume_ml = dose.get("volume_ml", 0)
         route = dose.get("route", "?")
         phase = dose.get("phase", "?")
-        notes = f"{volume_ml:.2f} mL — {route} — {phase}"
+        notes = f"{volume_ml:.2f} mL -> {route} -> {phase}"
 
         ligne: dict[str, Any] = {
             "designation": dose.get("commercial", dose.get("name", "?")),
             "quantite": 1,
+            "delivered": 1,
             "notes": notes,
         }
 

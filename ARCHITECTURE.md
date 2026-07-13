@@ -76,7 +76,7 @@ FastAPI (port 8112)
   1. Créer chirurgie avec doses (via /api/surgeries/)
   2. Valider stock avant ordonnance (via /validate-stock)
   3. Créer ordonnance dans VetoPartner (via /create-ordonnance)
-  4. Ordonnance est créée comme "prescription uniquement" (non délivrée)
+  4. Ordonnance créée avec delivered=1 (médicaments dispensés immédiatement)
 
 ### 5. **dashboard** — Interface web 5-step wizard
 
@@ -173,7 +173,7 @@ FastAPI (port 8112)
 
 - **Workflow**:
   1. **Arrivée**: Créer tracking initial (animal info, poids, client)
-  2. **Anesthésie**: Sélectionner protocole, calcul doses, créer ordonnance ERP
+  2. **Anesthésie**: Sélectionner protocole, calcul doses, créer ordonnance ERP (lignes avec delivered=1)
   3. **Actes**: Sélectionner actes + remplir formulaires
   4. **Sortie**: Éditer CR, créer consultation ERP avec synthèse
 

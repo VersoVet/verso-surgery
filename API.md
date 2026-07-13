@@ -244,6 +244,7 @@ Crée une ordonnance VetoPartner via erp-connector.
 {
   "designation": "Nom du médicament",
   "quantite": 1,
+  "delivered": 1,
   "notes": "Posologie/instructions",
   "type_ligne": "hors_stock" | "produit" | "note"
 }
@@ -259,12 +260,14 @@ curl -X POST "http://10.0.0.13:8112/api/dashboard/ordonnance" \
       {
         "designation": "Propofol",
         "quantite": 1,
+        "delivered": 1,
         "notes": "2.5 mL (100 mg/mL)",
         "type_ligne": "hors_stock"
       },
       {
         "designation": "Domitor",
         "quantite": 1,
+        "delivered": 1,
         "notes": "0.4 mL (1 mg/mL)",
         "type_ligne": "hors_stock"
       }
@@ -976,7 +979,7 @@ curl -X POST "http://10.0.0.44:8112/api/prescriptions/surg_001/create-ordonnance
 **Notes**:
 - Les codes centraux sont recherchés automatiquement dans le catalogue VetoPartner
 - Médicaments non trouvés: créés comme "hors_stock" pour permettre édition manuelle dans VetoPartner
-- Ordonnance toujours créée en tant que "prescription uniquement" (type_ordo=1)
+- Ordonnance créée avec delivered=1 (médicaments dispensés immédiatement durant la chirurgie)
 - Voir erp-connector API.md pour détails sur `code_central`, `type_ligne`, auto-enrichissement
 
 ---
