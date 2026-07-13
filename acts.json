@@ -330,5 +330,74 @@
         "placeholder": "Surveillance, effets, incidents..."
       }
     ]
+  },
+  {
+    "id": "ultrason",
+    "name": "Ultrason thérapeutique",
+    "description": "Thérapie par ultrasons",
+    "icon": "〰️",
+    "fields": [
+      {
+        "id": "num_seance",
+        "label": "N° de séance",
+        "type": "number",
+        "required": true,
+        "default": 1
+      },
+      {
+        "id": "localisation",
+        "label": "Localisation du traitement",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Épaule, tarse..."
+      },
+      {
+        "id": "frequence_mhz",
+        "label": "Fréquence",
+        "type": "select",
+        "required": true,
+        "default": "1",
+        "options": [
+          {"value": "1", "label": "1 MHz"},
+          {"value": "3", "label": "3 MHz"}
+        ]
+      },
+      {
+        "id": "intensite",
+        "label": "Intensité",
+        "type": "number",
+        "unit": "W/cm²",
+        "required": true,
+        "placeholder": "Ex: 1.0",
+        "default": 1.0
+      },
+      {
+        "id": "mode",
+        "label": "Mode",
+        "type": "select",
+        "required": true,
+        "default": "pulse",
+        "options": [
+          {"value": "pulse", "label": "Pulse"},
+          {"value": "continu", "label": "Continu"}
+        ]
+      },
+      {
+        "id": "duree_min",
+        "label": "Durée",
+        "type": "number",
+        "unit": "min",
+        "required": true,
+        "placeholder": "Ex: 5",
+        "default": 5
+      },
+      {
+        "id": "observations",
+        "label": "Observations",
+        "type": "textarea",
+        "required": false,
+        "placeholder": "Réaction du patient, incidents..."
+      }
+    ]
   }
 ]

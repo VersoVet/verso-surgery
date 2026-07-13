@@ -1,0 +1,82 @@
+{
+  "onde_de_choc": [
+    {
+      "zone": "Épaule — Insertion bicipitale",
+      "params": {
+        "frequence": 4,
+        "pression": 1.5,
+        "nb_coups": 2000
+      }
+    },
+    {
+      "zone": "Carpe — Ligaments collatéraux",
+      "params": {
+        "frequence": 4,
+        "pression": 2.0,
+        "nb_coups": 2000
+      }
+    },
+    {
+      "zone": "Tarse — Ligaments collatéraux",
+      "params": {
+        "frequence": 4,
+        "pression": 2.0,
+        "nb_coups": 2000
+      }
+    },
+    {
+      "zone": "Tendon fléchisseur",
+      "params": {
+        "frequence": 4,
+        "pression": 1.5,
+        "nb_coups": 2000
+      }
+    },
+    {
+      "zone": "Tendon suspenseur",
+      "params": {
+        "frequence": 4,
+        "pression": 1.5,
+        "nb_coups": 2000
+      }
+    }
+  ],
+  "ultrason": [
+    {
+      "zone": "Épaule",
+      "params": {
+        "frequence_mhz": "1",
+        "intensite": 1.0,
+        "mode": "pulse",
+        "duree_min": 5
+      }
+    },
+    {
+      "zone": "Carpe",
+      "params": {
+        "frequence_mhz": "3",
+        "intensite": 0.5,
+        "mode": "pulse",
+        "duree_min": 5
+      }
+    },
+    {
+      "zone": "Tarse",
+      "params": {
+        "frequence_mhz": "3",
+        "intensite": 0.5,
+        "mode": "pulse",
+        "duree_min": 5
+      }
+    },
+    {
+      "zone": "Tendon suspenseur",
+      "params": {
+        "frequence_mhz": "1",
+        "intensite": 1.0,
+        "mode": "pulse",
+        "duree_min": 8
+      }
+    }
+  ]
+}

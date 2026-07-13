@@ -12,6 +12,8 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from src.modules.animal_memory.routes import router as animal_memory_router
+from src.modules.animal_memory.store import ensure_db
 from src.modules.animals.routes import router as animals_router
 from src.modules.dashboard.routes import router as dashboard_router
 from src.modules.prescriptions.routes import router as prescriptions_router
@@ -101,6 +103,9 @@ async def lifespan(app: FastAPI) -> Any:
     # Préparer les répertoires de données
     ensure_data_dir()
 
+    # Initialiser la base de données mémoire animale
+    ensure_db()
+
     # Attendre les dépendances
     if not await wait_for_dependency("protocols", check_protocols):
         logger.error("Failed to load protocols")
@@ -154,6 +159,7 @@ app.include_router(surgeries_router)
 app.include_router(prescriptions_router)
 app.include_router(dashboard_router)
 app.include_router(suivi_router)
+app.include_router(animal_memory_router)
 
 # Monter les fichiers statiques
 static_dir = Path(__file__).parent.parent / "static"

@@ -27,6 +27,21 @@ def load_acts() -> list[dict[str, Any]]:
         return []
 
 
+def load_presets() -> dict[str, Any]:
+    """Charge les presets de zones depuis presets.json.
+
+    Returns:
+        Dict avec les presets par act_id.
+    """
+    presets_file = Path(__file__).parent.parent.parent.parent / "presets.json"
+    try:
+        with open(presets_file) as f:
+            data: Any = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 @router.get("/sites")
 async def get_sites() -> dict[str, Any]:
     """Récupère tous les sites vétérinaires.
@@ -122,6 +137,22 @@ async def get_acts() -> dict[str, Any]:
     """
     acts = load_acts()
     return {"acts": acts}
+
+
+@router.get("/presets")
+async def get_presets(act_id: str | None = None) -> dict[str, Any]:
+    """Récupère les presets de zones pour un acte.
+
+    Args:
+        act_id: Identifiant de l'acte (optionnel).
+
+    Returns:
+        Dict avec presets filtrés ou complets.
+    """
+    all_presets = load_presets()
+    if act_id:
+        return {"presets": all_presets.get(act_id, [])}
+    return {"presets": all_presets}
 
 
 @router.post("/consultation")

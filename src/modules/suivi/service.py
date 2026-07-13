@@ -242,6 +242,22 @@ async def process_actes(req: ActesRequest) -> SuiviTracking:
     )
 
     save_tracking(tracking)
+
+    # Mettre à jour la mémoire animale (non-bloquant)
+    try:
+        from src.modules.animal_memory.service import update_animal_memory
+
+        date_str = now[:10]  # YYYY-MM-DD
+        await update_animal_memory(
+            animal_id=tracking.animal_id,
+            animal_nom=tracking.animal_nom,
+            date=date_str,
+            appointment_id=req.appointment_id,
+            actes=req.actes,
+        )
+    except Exception as e:
+        logger.warning(f"Animal memory update failed (non-blocking): {e}")
+
     logger.info(f"Actes processed for appointment {req.appointment_id}")
     return tracking
 
