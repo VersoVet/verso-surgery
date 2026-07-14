@@ -431,13 +431,35 @@
         }
 
         /* === Config Modal === */
-        .config-list {
+        .config-tabs {
             display: flex;
-            flex-direction: column;
             gap: 8px;
+            border-bottom: 2px solid #E5E7EB;
+            margin-bottom: 12px;
         }
 
-        .config-item {
+        .config-tab-btn {
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6B7280;
+            transition: all 0.2s;
+        }
+
+        .config-tab-btn:hover {
+            color: #4F46E5;
+        }
+
+        .config-tab-btn.active {
+            color: #4F46E5;
+            border-bottom-color: #4F46E5;
+        }
+
+        .config-item-btn {
             padding: 10px 12px;
             border: 2px solid #E5E7EB;
             border-radius: 6px;
@@ -448,17 +470,88 @@
             font-weight: 600;
             color: #1F2937;
             transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .config-item:hover {
+        .config-item-btn:hover {
+            border-color: #4F46E5;
+            background: #F3F4F6;
+        }
+
+        .config-item-btn.selected {
             border-color: #4F46E5;
             background: #EEF2FF;
         }
 
-        .config-item.active {
+        .config-item-delete {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: none;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .config-item-delete:hover {
+            background: #FECACA;
+        }
+
+        .config-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .config-form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4F46E5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-form-group input[type="text"],
+        .config-form-group input[type="number"],
+        .config-form-group select,
+        .config-form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .config-form-group input:focus,
+        .config-form-group select:focus,
+        .config-form-group textarea:focus {
+            outline: none;
             border-color: #4F46E5;
-            background: #4F46E5;
-            color: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .config-form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .config-form-section {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .config-form-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* === Acts Selection === */
@@ -716,36 +809,38 @@
         </div>
     </div>
 
-    <!-- Modal Configuration JSON -->
+    <!-- Modal Configuration -->
     <div id="modal-config" class="modal" onclick="if(event.target===this) window.closeModalConfig()">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 85vh;">
             <div class="modal-header">⚙️ Configuration des Protocoles et Présets</div>
-            <div class="modal-body">
-                <div style="display: flex; gap: 16px; height: 500px;">
-                    <!-- Left panel: config list -->
-                    <div style="flex: 0 0 180px; border-right: 1px solid #E5E7EB; padding-right: 16px;">
-                        <p style="font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Sélectionner:</p>
-                        <div class="config-list">
-                            <button class="config-item" onclick="window.loadConfig(event, 'acts')">📋 Actes</button>
-                            <button class="config-item" onclick="window.loadConfig(event, 'protocols')">🏥 Protocoles</button>
-                            <button class="config-item" onclick="window.loadConfig(event, 'protocoles_suivi')">💉 Anesthésie</button>
-                            <button class="config-item" onclick="window.loadConfig(event, 'presets')">📍 Présets Zones</button>
-                        </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; height: 600px; gap: 0; overflow: hidden;">
+                <!-- Tabs -->
+                <div class="config-tabs">
+                    <button class="config-tab-btn active" onclick="window.switchConfigTab(event, 'acts')">📋 Actes</button>
+                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'protocols')">🏥 Protocoles</button>
+                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'protocoles_suivi')">💉 Anesthésie</button>
+                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'presets')">📍 Présets</button>
+                </div>
+
+                <!-- Main content area: list + editor -->
+                <div style="display: flex; gap: 12px; flex: 1; min-height: 0; margin-top: 12px;">
+                    <!-- Left: Items list -->
+                    <div style="flex: 0 0 240px; display: flex; flex-direction: column; border-right: 1px solid #E5E7EB; overflow: hidden;">
+                        <div style="font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 8px; text-transform: uppercase;">Éléments:</div>
+                        <div id="config-items-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+                        <button class="btn btn-small" onclick="window.addConfigItem()" style="margin-top: 8px; width: 100%; background: #10B981; color: white;">+ Ajouter</button>
                     </div>
-                    <!-- Right panel: JSON editor -->
-                    <div style="flex: 1; display: flex; flex-direction: column;">
-                        <div style="margin-bottom: 8px;">
-                            <p style="font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">Contenu JSON:</p>
-                        </div>
-                        <textarea id="config-editor" placeholder="Sélectionnez un fichier..." style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px; border: 1px solid #E5E7EB; border-radius: 6px; resize: none;"></textarea>
-                        <div id="config-status" style="margin-top: 8px; font-size: 12px; color: #6B7280;"></div>
+
+                    <!-- Right: Editor -->
+                    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                        <div id="config-editor-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;"></div>
+                        <div id="config-status" style="font-size: 12px; color: #6B7280; padding: 8px 0;"></div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="window.closeModalConfig()">Annuler</button>
-                <button class="btn btn-secondary" onclick="window.resetConfig()" style="background: #FEE2E2; color: #991B1B;">↻ Réinitialiser</button>
-                <button class="btn btn-primary" onclick="window.saveConfig()">💾 Enregistrer</button>
+                <button class="btn btn-primary" onclick="window.saveAllConfigs()">💾 Enregistrer tout</button>
             </div>
         </div>
     </div>
@@ -1422,110 +1517,255 @@
 
         // ===== Config Modal =====
 
-        let currentConfigName = null;
-        let configCache = {};
+        const configState = {
+            currentTab: 'acts',
+            data: {
+                acts: [],
+                protocols: [],
+                protocoles_suivi: [],
+                presets: {}
+            },
+            originalData: {
+                acts: [],
+                protocols: [],
+                protocoles_suivi: [],
+                presets: {}
+            },
+            selectedItemIndex: null
+        };
 
-        window.openModalConfig = function() {
-            currentConfigName = null;
-            configCache = {};
-            document.getElementById('config-editor').value = '';
-            document.getElementById('config-status').textContent = '';
-            document.querySelectorAll('.config-item').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('modal-config').classList.add('open');
+        window.openModalConfig = async function() {
+            configState.currentTab = 'acts';
+            configState.selectedItemIndex = null;
+
+            const statusEl = document.getElementById('config-status');
+            statusEl.textContent = 'Chargement des configurations...';
+
+            try {
+                // Load all configs
+                const configs = ['acts', 'protocols', 'protocoles_suivi', 'presets'];
+                for (const name of configs) {
+                    const result = await apiFetch(`/api/dashboard/config/${name}`);
+                    if (result.success) {
+                        configState.data[name] = JSON.parse(JSON.stringify(result.data));
+                        configState.originalData[name] = JSON.parse(JSON.stringify(result.data));
+                    }
+                }
+
+                statusEl.textContent = '✓ Configurations chargées';
+                window.renderConfigTab('acts');
+                document.getElementById('modal-config').classList.add('open');
+            } catch (e) {
+                statusEl.textContent = `❌ Erreur: ${e.message}`;
+            }
         };
 
         window.closeModalConfig = function() {
             document.getElementById('modal-config').classList.remove('open');
-            currentConfigName = null;
-            configCache = {};
+            configState.selectedItemIndex = null;
         };
 
-        window.loadConfig = async function(evt, configName) {
-            const statusEl = document.getElementById('config-status');
-            statusEl.textContent = 'Chargement...';
+        window.switchConfigTab = function(evt, tabName) {
+            configState.currentTab = tabName;
+            configState.selectedItemIndex = null;
 
-            try {
-                const result = await apiFetch(`/api/dashboard/config/${configName}`);
+            // Update tab buttons
+            document.querySelectorAll('.config-tab-btn').forEach(btn => btn.classList.remove('active'));
+            evt.target.classList.add('active');
 
-                if (result.error) {
-                    statusEl.textContent = `❌ Erreur: ${result.error}`;
-                    return;
-                }
-
-                currentConfigName = configName;
-                configCache[configName] = result.data;
-
-                // Update active button
-                document.querySelectorAll('.config-item').forEach(btn => btn.classList.remove('active'));
-                evt.target.closest('.config-item').classList.add('active');
-
-                // Display JSON with formatting
-                const editor = document.getElementById('config-editor');
-                editor.value = JSON.stringify(result.data, null, 2);
-                statusEl.textContent = `✓ ${configName}.json chargé (${Object.keys(result.data).length} entrées)`;
-            } catch (e) {
-                statusEl.textContent = `❌ Erreur: ${e.message}`;
-            }
+            window.renderConfigTab(tabName);
         };
 
-        window.saveConfig = async function() {
-            if (!currentConfigName) {
-                alert('Veuillez sélectionner un fichier');
-                return;
-            }
+        window.renderConfigTab = function(tabName) {
+            const listEl = document.getElementById('config-items-list');
+            const editorEl = document.getElementById('config-editor-container');
+            const data = configState.data[tabName];
 
-            const editor = document.getElementById('config-editor');
-            const statusEl = document.getElementById('config-status');
+            listEl.innerHTML = '';
+            editorEl.innerHTML = '';
 
-            try {
-                // Valider JSON
-                let data;
-                try {
-                    data = JSON.parse(editor.value);
-                } catch (e) {
-                    statusEl.textContent = `❌ JSON invalide: ${e.message}`;
-                    return;
+            if (tabName === 'presets') {
+                // Special handling for presets (object with categories)
+                for (const [category, items] of Object.entries(data)) {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.style.marginBottom = '12px';
+                    categoryDiv.innerHTML = `<div style="font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin-bottom: 4px;">${category}</div>`;
+
+                    items.forEach((item, idx) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'config-item-btn';
+                        btn.innerHTML = `<span>${item.zone}</span><span style="font-size: 11px;">×</span>`;
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            if (e.target.textContent === '×') {
+                                items.splice(idx, 1);
+                                window.renderConfigTab(tabName);
+                            } else {
+                                configState.selectedItemIndex = idx;
+                                window.renderConfigEditor(tabName, category, idx);
+                            }
+                        };
+                        categoryDiv.appendChild(btn);
+                    });
+                    listEl.appendChild(categoryDiv);
                 }
-
-                statusEl.textContent = 'Enregistrement...';
-
-                const result = await apiFetch(`/api/dashboard/config/${currentConfigName}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data }),
+            } else {
+                // Array handling (acts, protocols, protocoles_suivi)
+                data.forEach((item, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'config-item-btn';
+                    const displayName = item.name || item.label || `Item ${idx + 1}`;
+                    btn.innerHTML = `<span>${(item.icon || '')} ${displayName}</span><span style="font-size: 11px;">×</span>`;
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (e.target.textContent === '×') {
+                            data.splice(idx, 1);
+                            window.renderConfigTab(tabName);
+                        } else {
+                            configState.selectedItemIndex = idx;
+                            window.renderConfigEditor(tabName, null, idx);
+                        }
+                    };
+                    listEl.appendChild(btn);
                 });
-
-                if (result.success) {
-                    statusEl.textContent = `✅ ${result.message}`;
-                    configCache[currentConfigName] = data;
-                    // Reload data to reflect changes
-                    setTimeout(() => {
-                        window.loadProtocols();
-                        window.loadActs();
-                    }, 500);
-                } else {
-                    statusEl.textContent = `❌ Erreur: ${result.error}`;
-                }
-            } catch (e) {
-                statusEl.textContent = `❌ Erreur: ${e.message}`;
             }
         };
 
-        window.resetConfig = async function() {
-            if (!currentConfigName) {
-                alert('Veuillez sélectionner un fichier');
-                return;
+        window.renderConfigEditor = function(tabName, category, index) {
+            const editorEl = document.getElementById('config-editor-container');
+            const data = configState.data[tabName];
+
+            let item;
+            if (tabName === 'presets') {
+                item = data[category][index];
+            } else {
+                item = data[index];
             }
 
-            if (!confirm(`Êtes-vous sûr de vouloir réinitialiser ${currentConfigName}.json ?`)) {
-                return;
+            editorEl.innerHTML = '';
+
+            // Generate form based on item structure
+            const createInput = (key, value, label) => {
+                const group = document.createElement('div');
+                group.className = 'config-form-group';
+
+                const labelEl = document.createElement('label');
+                labelEl.textContent = label || key;
+                group.appendChild(labelEl);
+
+                const inputEl = document.createElement('input');
+                if (typeof value === 'number') {
+                    inputEl.type = 'number';
+                    inputEl.step = '0.01';
+                } else {
+                    inputEl.type = 'text';
+                }
+                inputEl.value = value;
+                inputEl.onchange = (e) => {
+                    if (tabName === 'presets') {
+                        data[category][index][key] = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                    } else {
+                        data[index][key] = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                    }
+                };
+                group.appendChild(inputEl);
+                return group;
+            };
+
+            // Top level fields
+            for (const [key, value] of Object.entries(item)) {
+                if (key === 'fields' || typeof value === 'object') continue;
+                editorEl.appendChild(createInput(key, value, key));
             }
 
-            // Reload from server (reverting unsaved changes)
+            // Nested object fields (like params in presets)
+            if (item.params) {
+                const section = document.createElement('div');
+                section.className = 'config-form-section';
+                section.innerHTML = '<div class="config-form-section-title">Paramètres</div>';
+                for (const [key, value] of Object.entries(item.params)) {
+                    section.appendChild(createInput(key, value, key));
+                }
+                editorEl.appendChild(section);
+            }
+
+            // Fields array for acts
+            if (item.fields && Array.isArray(item.fields)) {
+                const section = document.createElement('div');
+                section.className = 'config-form-section';
+                section.innerHTML = '<div class="config-form-section-title">Champs du formulaire</div>';
+                item.fields.forEach((field, fIdx) => {
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.style.marginBottom = '12px'; fieldDiv.style.paddingBottom = '12px'; fieldDiv.style.borderBottom = '1px solid #D1D5DB';
+                    fieldDiv.innerHTML = `<div style="font-size: 11px; color: #6B7280; margin-bottom: 8px;"><strong>Champ ${fIdx + 1}:</strong> ${field.id}</div>`;
+
+                    for (const [key, value] of Object.entries(field)) {
+                        if (typeof value === 'boolean') {
+                            const check = document.createElement('input');
+                            check.type = 'checkbox';
+                            check.checked = value;
+                            check.onchange = (e) => { item.fields[fIdx][key] = e.target.checked; };
+                            const label = document.createElement('label');
+                            label.style.display = 'flex'; label.style.alignItems = 'center'; label.style.gap = '6px';
+                            label.appendChild(check);
+                            label.appendChild(document.createTextNode(key));
+                            fieldDiv.appendChild(label);
+                        } else {
+                            fieldDiv.appendChild(createInput(key, value, key));
+                        }
+                    }
+                    section.appendChild(fieldDiv);
+                });
+                editorEl.appendChild(section);
+            }
+        };
+
+        window.addConfigItem = function() {
+            const tab = configState.currentTab;
+            const data = configState.data[tab];
+
+            let newItem;
+            if (tab === 'acts') {
+                newItem = { id: 'new_act', name: 'Nouvel acte', icon: '📝', description: '', fields: [] };
+            } else if (tab === 'protocols') {
+                newItem = { id: 'new_protocol', name: 'Nouveau protocole', drugs: [] };
+            } else if (tab === 'protocoles_suivi') {
+                newItem = { id: 'new_suivi', name: 'Nouveau protocole suivi', drugs: [] };
+            }
+
+            if (newItem) {
+                data.push(newItem);
+                window.renderConfigTab(tab);
+            }
+        };
+
+        window.saveAllConfigs = async function() {
             const statusEl = document.getElementById('config-status');
-            statusEl.textContent = 'Réinitialisation...';
-            delete configCache[currentConfigName];
-            await window.loadConfig(currentConfigName);
+            statusEl.textContent = 'Enregistrement...';
+
+            try {
+                const configs = ['acts', 'protocols', 'protocoles_suivi', 'presets'];
+                for (const name of configs) {
+                    const result = await apiFetch(`/api/dashboard/config/${name}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: configState.data[name] })
+                    });
+                    if (!result.success) {
+                        statusEl.textContent = `❌ Erreur ${name}: ${result.error}`;
+                        return;
+                    }
+                }
+
+                statusEl.textContent = '✅ Toutes les configurations enregistrées!';
+                setTimeout(() => {
+                    window.loadProtocols();
+                    window.loadActs();
+                    window.closeModalConfig();
+                }, 1000);
+            } catch (e) {
+                statusEl.textContent = `❌ Erreur: ${e.message}`;
+            }
         };
 
         // ===== Controls =====
