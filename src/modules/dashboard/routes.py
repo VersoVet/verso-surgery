@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 
 from src.models import CreateConsultationRequest, CreateOrdonnanceRequest
 from src.modules.dashboard.service import DashboardService
@@ -225,7 +225,7 @@ async def get_config(config_name: str) -> dict[str, Any]:
 
 
 @router.post("/config/{config_name}")
-async def update_config(config_name: str, body: dict[str, Any]) -> dict[str, Any]:
+async def update_config(config_name: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Met à jour un fichier de configuration JSON.
 
     Args:
