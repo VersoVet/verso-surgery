@@ -198,11 +198,17 @@ async def process_anesthesie(req: AnesthesieRequest) -> dict[str, Any]:
     tracking.current_stage = "anesthesie"
     tracking.updated_at = now
     tracking.poids_kg = req.poids_kg
+
+    # Récupérer le nom du protocole
+    protocol = next((p for p in load_suivi_protocols() if p.id == req.protocol_id), None)
+    protocol_name = protocol.name if protocol else "Protocole inconnu"
+
     tracking.stages["anesthesie"] = SuiviStageData(
         status=StageStatus.DONE,
         timestamp=now,
         data={
             "protocol_id": req.protocol_id,
+            "protocol_name": protocol_name,
             "poids_kg": req.poids_kg,
             "doses": req.doses,
             "ordonnance_id": ordo_result.get("ordonnance_id"),

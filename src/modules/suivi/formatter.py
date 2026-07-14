@@ -15,10 +15,6 @@ def format_consultation(tracking: SuiviTracking) -> str:
     CRLF = "\r\n"
     sections = []
 
-    # En-tête
-    header = f"Patient: {tracking.animal_nom} ({tracking.espece}, {tracking.poids_kg} kg) - {tracking.date_rdv}"
-    sections.append(header)
-
     # Anesthésie réalisée
     anesth_stage = tracking.stages.get("anesthesie")
     anesth_data = anesth_stage.data if anesth_stage else {}
