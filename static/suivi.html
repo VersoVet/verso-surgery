@@ -45,6 +45,7 @@
             display: flex;
             gap: 12px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         select, input[type="date"] {
@@ -590,6 +591,12 @@
                     </select>
                 </label>
                 <label>
+                    Vétérinaire:
+                    <select id="vet-select" onchange="window.changeVet()">
+                        <option value="">Chargement...</option>
+                    </select>
+                </label>
+                <label>
                     Date:
                     <input type="date" id="date-input" onchange="window.changeDate()">
                 </label>
@@ -678,6 +685,7 @@
     <script>
         const state = {
             siteId: 2,
+            vetId: null,
             date: getTodayString(),
             appointments: [],
             trackings: {},
@@ -740,6 +748,26 @@
             console.log(`✓ Loaded ${Object.keys(state.trackings).length} trackings`);
         };
 
+        // ===== Cookie Helpers =====
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const c = cookies[i].trim();
+                if (c.indexOf(nameEQ) === 0) {
+                    return c.substring(nameEQ.length);
+                }
+            }
+            return '';
+        }
+
+        function setCookie(name, value, days = 365) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = `${name}=${value}; ${expires}; path=/`;
+        }
+
         window.loadSites = async function() {
             const data = await apiFetch('/api/dashboard/sites');
             const sites = data.sites || [];
@@ -747,6 +775,20 @@
             select.innerHTML = sites.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
             if (sites.length > 0) {
                 select.value = state.siteId;
+            }
+        };
+
+        window.loadVets = async function() {
+            const data = await apiFetch('/api/dashboard/vets');
+            const vets = data.vets || [];
+            const select = document.getElementById('vet-select');
+            select.innerHTML = '<option value="">— Aucun —</option>' +
+                vets.map(v => `<option value="${v.id}">${v.prenom} ${v.nom}</option>`).join('');
+            // Restore from cookie
+            const savedVetId = getCookie('verso_surgery_vet_id');
+            if (savedVetId) {
+                select.value = savedVetId;
+                state.vetId = parseInt(savedVetId);
             }
         };
 
@@ -1317,6 +1359,12 @@
             window.refreshData();
         };
 
+        window.changeVet = function() {
+            const vetId = document.getElementById('vet-select').value;
+            state.vetId = vetId ? parseInt(vetId) : null;
+            setCookie('verso_surgery_vet_id', vetId || '', vetId ? 365 : 0);
+        };
+
         window.changeDate = function() {
             state.date = document.getElementById('date-input').value;
             window.refreshData();
@@ -1347,9 +1395,10 @@
 
         async function init() {
             document.getElementById('date-input').value = state.date;
-            // Charger d'abord les données statiques (sites, protocoles, actes)
+            // Charger d'abord les données statiques (sites, vétérinaires, protocoles, actes)
             await Promise.all([
                 window.loadSites(),
+                window.loadVets(),
                 window.loadProtocols(),
                 window.loadActs(),
             ]);
