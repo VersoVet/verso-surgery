@@ -953,7 +953,7 @@
 
             // Populate weight
             const appt = state.appointments.find(a => a.id === appointmentId);
-            const tracking = state.trackings.find(t => t.appointment_id === appointmentId);
+            const tracking = state.trackings[appointmentId];
             document.getElementById('anesth-weight').value = tracking?.poids_kg ?? appt?.poids ?? 0;
 
             // Render protocol tabs
