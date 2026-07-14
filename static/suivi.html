@@ -430,6 +430,37 @@
             font-size: 12px;
         }
 
+        /* === Config Modal === */
+        .config-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-item {
+            padding: 10px 12px;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1F2937;
+            transition: all 0.2s;
+        }
+
+        .config-item:hover {
+            border-color: #4F46E5;
+            background: #EEF2FF;
+        }
+
+        .config-item.active {
+            border-color: #4F46E5;
+            background: #4F46E5;
+            color: white;
+        }
+
         /* === Acts Selection === */
         .acts-list {
             display: grid;
@@ -604,6 +635,9 @@
                     <span class="refresh-indicator" id="refresh-indicator"></span>
                     Auto (30s)
                 </button>
+                <button class="refresh-btn" title="Configurer les protocoles et présets" onclick="window.openModalConfig()">
+                    ⚙️ Config
+                </button>
             </div>
         </div>
 
@@ -678,6 +712,40 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="window.closeModalSortie()">Annuler</button>
                 <button class="btn btn-primary" onclick="window.validateSortie()">✓ Créer Consultation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuration JSON -->
+    <div id="modal-config" class="modal" onclick="if(event.target===this) window.closeModalConfig()">
+        <div class="modal-content">
+            <div class="modal-header">⚙️ Configuration des Protocoles et Présets</div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 16px; height: 500px;">
+                    <!-- Left panel: config list -->
+                    <div style="flex: 0 0 180px; border-right: 1px solid #E5E7EB; padding-right: 16px;">
+                        <p style="font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Sélectionner:</p>
+                        <div class="config-list">
+                            <button class="config-item" onclick="window.loadConfig('acts')">📋 Actes</button>
+                            <button class="config-item" onclick="window.loadConfig('protocols')">🏥 Protocoles</button>
+                            <button class="config-item" onclick="window.loadConfig('protocoles_suivi')">💉 Anesthésie</button>
+                            <button class="config-item" onclick="window.loadConfig('presets')">📍 Présets Zones</button>
+                        </div>
+                    </div>
+                    <!-- Right panel: JSON editor -->
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <div style="margin-bottom: 8px;">
+                            <p style="font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">Contenu JSON:</p>
+                        </div>
+                        <textarea id="config-editor" placeholder="Sélectionnez un fichier..." style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px; border: 1px solid #E5E7EB; border-radius: 6px; resize: none;"></textarea>
+                        <div id="config-status" style="margin-top: 8px; font-size: 12px; color: #6B7280;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.closeModalConfig()">Annuler</button>
+                <button class="btn btn-secondary" onclick="window.resetConfig()" style="background: #FEE2E2; color: #991B1B;">↻ Réinitialiser</button>
+                <button class="btn btn-primary" onclick="window.saveConfig()">💾 Enregistrer</button>
             </div>
         </div>
     </div>
@@ -1350,6 +1418,114 @@
             } else {
                 alert(`Erreur: ${result.error}`);
             }
+        };
+
+        // ===== Config Modal =====
+
+        let currentConfigName = null;
+        let configCache = {};
+
+        window.openModalConfig = function() {
+            currentConfigName = null;
+            configCache = {};
+            document.getElementById('config-editor').value = '';
+            document.getElementById('config-status').textContent = '';
+            document.querySelectorAll('.config-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('modal-config').classList.add('open');
+        };
+
+        window.closeModalConfig = function() {
+            document.getElementById('modal-config').classList.remove('open');
+            currentConfigName = null;
+            configCache = {};
+        };
+
+        window.loadConfig = async function(configName) {
+            const statusEl = document.getElementById('config-status');
+            statusEl.textContent = 'Chargement...';
+
+            try {
+                const result = await apiFetch(`/api/dashboard/config/${configName}`);
+
+                if (result.error) {
+                    statusEl.textContent = `❌ Erreur: ${result.error}`;
+                    return;
+                }
+
+                currentConfigName = configName;
+                configCache[configName] = result.data;
+
+                // Update active button
+                document.querySelectorAll('.config-item').forEach(btn => btn.classList.remove('active'));
+                event.target.closest('.config-item').classList.add('active');
+
+                // Display JSON with formatting
+                const editor = document.getElementById('config-editor');
+                editor.value = JSON.stringify(result.data, null, 2);
+                statusEl.textContent = `✓ ${configName}.json chargé (${Object.keys(result.data).length} entrées)`;
+            } catch (e) {
+                statusEl.textContent = `❌ Erreur: ${e.message}`;
+            }
+        };
+
+        window.saveConfig = async function() {
+            if (!currentConfigName) {
+                alert('Veuillez sélectionner un fichier');
+                return;
+            }
+
+            const editor = document.getElementById('config-editor');
+            const statusEl = document.getElementById('config-status');
+
+            try {
+                // Valider JSON
+                let data;
+                try {
+                    data = JSON.parse(editor.value);
+                } catch (e) {
+                    statusEl.textContent = `❌ JSON invalide: ${e.message}`;
+                    return;
+                }
+
+                statusEl.textContent = 'Enregistrement...';
+
+                const result = await apiFetch(`/api/dashboard/config/${currentConfigName}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data }),
+                });
+
+                if (result.success) {
+                    statusEl.textContent = `✅ ${result.message}`;
+                    configCache[currentConfigName] = data;
+                    // Reload data to reflect changes
+                    setTimeout(() => {
+                        window.loadProtocols();
+                        window.loadActs();
+                    }, 500);
+                } else {
+                    statusEl.textContent = `❌ Erreur: ${result.error}`;
+                }
+            } catch (e) {
+                statusEl.textContent = `❌ Erreur: ${e.message}`;
+            }
+        };
+
+        window.resetConfig = async function() {
+            if (!currentConfigName) {
+                alert('Veuillez sélectionner un fichier');
+                return;
+            }
+
+            if (!confirm(`Êtes-vous sûr de vouloir réinitialiser ${currentConfigName}.json ?`)) {
+                return;
+            }
+
+            // Reload from server (reverting unsaved changes)
+            const statusEl = document.getElementById('config-status');
+            statusEl.textContent = 'Réinitialisation...';
+            delete configCache[currentConfigName];
+            await window.loadConfig(currentConfigName);
         };
 
         // ===== Controls =====

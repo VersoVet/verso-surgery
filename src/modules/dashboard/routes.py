@@ -197,3 +197,68 @@ async def create_ordonnance(
         site_id=request.site_id,
     )
     return result
+
+
+@router.get("/config/{config_name}")
+async def get_config(config_name: str) -> dict[str, Any]:
+    """Récupère le contenu d'un fichier de configuration JSON.
+
+    Args:
+        config_name: Nom du fichier (acts, protocols, protocoles_suivi, presets)
+
+    Returns:
+        Contenu du fichier JSON ou erreur.
+    """
+    allowed_files = {"acts", "protocols", "protocoles_suivi", "presets"}
+    if config_name not in allowed_files:
+        return {"error": "Configuration invalide", "status": 400}
+
+    config_file = Path(__file__).parent.parent.parent.parent / f"{config_name}.json"
+    try:
+        with open(config_file) as f:
+            data = json.load(f)
+        return {"success": True, "config": config_name, "data": data}
+    except FileNotFoundError:
+        return {"error": f"Fichier {config_name}.json non trouvé", "status": 404}
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON invalide: {str(e)}", "status": 400}
+
+
+@router.post("/config/{config_name}")
+async def update_config(config_name: str, body: dict[str, Any]) -> dict[str, Any]:
+    """Met à jour un fichier de configuration JSON.
+
+    Args:
+        config_name: Nom du fichier (acts, protocols, protocoles_suivi, presets)
+        body: Dict avec clé 'data' contenant le nouveau JSON
+
+    Returns:
+        Status de mise à jour.
+    """
+    allowed_files = {"acts", "protocols", "protocoles_suivi", "presets"}
+    if config_name not in allowed_files:
+        return {"success": False, "error": "Configuration invalide"}
+
+    if "data" not in body:
+        return {"success": False, "error": "Clé 'data' manquante"}
+
+    config_file = Path(__file__).parent.parent.parent.parent / f"{config_name}.json"
+    try:
+        # Valider que c'est du JSON valide
+        data = body["data"]
+        if isinstance(data, str):
+            data = json.loads(data)
+
+        # Écrire le fichier
+        with open(config_file, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        return {
+            "success": True,
+            "config": config_name,
+            "message": f"{config_name}.json mis à jour avec succès",
+        }
+    except json.JSONDecodeError as e:
+        return {"success": False, "error": f"JSON invalide: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Erreur lors de la sauvegarde: {str(e)}"}
