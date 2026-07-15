@@ -1649,9 +1649,20 @@
                 const group = document.createElement('div');
                 group.className = 'config-form-group';
 
+                // Label avec unité si fournie
                 const labelEl = document.createElement('label');
-                labelEl.textContent = label || key;
+                let labelText = label || key;
+                if (options.unit) {
+                    labelText += ` (${options.unit})`;
+                }
+                labelEl.textContent = labelText;
                 group.appendChild(labelEl);
+
+                // Conteneur flex pour input + unité badge
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.gap = '6px';
+                wrapper.style.alignItems = 'center';
 
                 let inputEl;
                 if (options.type === 'textarea') {
@@ -1668,6 +1679,7 @@
                     inputEl.value = value || '';
                 }
 
+                inputEl.style.flex = '1';
                 inputEl.onchange = (e) => {
                     const newVal = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
                     if (tabName === 'presets') {
@@ -1676,7 +1688,20 @@
                         data[index][key] = newVal;
                     }
                 };
-                group.appendChild(inputEl);
+                wrapper.appendChild(inputEl);
+
+                // Badge unité si fournie
+                if (options.unit && !options.type === 'textarea') {
+                    const unitBadge = document.createElement('div');
+                    unitBadge.style.fontSize = '11px';
+                    unitBadge.style.fontWeight = '600';
+                    unitBadge.style.color = '#6B7280';
+                    unitBadge.style.whiteSpace = 'nowrap';
+                    unitBadge.textContent = options.unit;
+                    wrapper.appendChild(unitBadge);
+                }
+
+                group.appendChild(wrapper);
                 return group;
             };
 
@@ -1705,22 +1730,28 @@
                     const fields = [
                         { key: 'name', label: 'Nom' },
                         { key: 'commercial', label: 'Nom commercial' },
-                        { key: 'concentration', label: 'Concentration', type: 'number' },
-                        { key: 'dose', label: 'Dose standard', type: 'number' },
-                        { key: 'dose_min', label: 'Dose min', type: 'number' },
-                        { key: 'dose_max', label: 'Dose max', type: 'number' },
+                        { key: 'concentration', label: 'Concentration', unit: drug.unit || 'mg/mL' },
+                        { key: 'unit', label: 'Unité de concentration' },
+                        { key: 'dose', label: 'Dose standard', unit: drug.dose_unit || 'mg/kg' },
+                        { key: 'dose_min', label: 'Dose min', unit: drug.dose_unit || 'mg/kg' },
+                        { key: 'dose_max', label: 'Dose max', unit: drug.dose_unit || 'mg/kg' },
+                        { key: 'dose_unit', label: 'Unité de dose' },
                         { key: 'route', label: 'Voie d\'administration' },
                         { key: 'phase', label: 'Phase' },
-                        { key: 'code_central', label: 'Code ERP' }
+                        { key: 'code_central', label: 'GTIN/Code ERP' }
                     ];
 
                     fields.forEach(field => {
                         const value = drug[field.key];
-                        const g = createInput(field.key, value, field.label);
-                        g.querySelector('input').onchange = (e) => {
-                            const v = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
-                            data[index].drugs[dIdx][field.key] = v;
-                        };
+                        const options = field.unit ? { unit: field.unit } : {};
+                        const g = createInput(field.key, value, field.label, options);
+                        const inputEl = g.querySelector('input') || g.querySelector('textarea');
+                        if (inputEl) {
+                            inputEl.onchange = (e) => {
+                                const v = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                                data[index].drugs[dIdx][field.key] = v;
+                            };
+                        }
                         drugDiv.appendChild(g);
                     });
 
@@ -1733,23 +1764,74 @@
                 addBtn.style.marginTop = '8px';
                 addBtn.style.background = '#10B981';
                 addBtn.style.color = 'white';
-                addBtn.textContent = '+ Ajouter anesthésique';
-                addBtn.onclick = () => {
-                    data[index].drugs.push({
-                        name: 'Nouveau',
-                        commercial: '',
-                        concentration: 1.0,
-                        unit: 'mg/mL',
-                        dose: 0,
-                        dose_unit: 'mg/kg',
-                        dose_min: 0,
-                        dose_max: 0,
-                        route: 'IM',
-                        phase: 'prémédication',
-                        optional: false,
-                        code_central: ''
+                addBtn.textContent = '+ Ajouter anesthésique (depuis ERP)';
+                addBtn.onclick = async () => {
+                    // Charger les produits ERP
+                    const result = await apiFetch('/api/dashboard/injectable-products');
+                    if (!result.success || !result.products) {
+                        alert('Erreur: impossible de charger les produits de l\'ERP');
+                        return;
+                    }
+
+                    // Créer un dialogue de sélection
+                    const dialog = document.createElement('div');
+                    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+
+                    const dialogContent = document.createElement('div');
+                    dialogContent.style.cssText = 'background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 70vh; overflow-y: auto;';
+
+                    const title = document.createElement('h3');
+                    title.textContent = 'Sélectionner un produit injectable';
+                    title.style.marginBottom = '16px';
+                    dialogContent.appendChild(title);
+
+                    const productsList = document.createElement('div');
+                    productsList.style.display = 'flex';
+                    productsList.style.flexDirection = 'column';
+                    productsList.style.gap = '8px';
+
+                    result.products.forEach(prod => {
+                        const btn = document.createElement('button');
+                        btn.style.cssText = 'padding: 10px 12px; text-align: left; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer; transition: all 0.2s;';
+                        btn.innerHTML = `<strong>${prod.nom}</strong><br><small>${prod.concentration} ${prod.unit} - ${prod.route}</small>`;
+                        btn.onmouseover = () => btn.style.background = '#F3F4F6';
+                        btn.onmouseout = () => btn.style.background = 'white';
+                        btn.onclick = () => {
+                            data[index].drugs.push({
+                                name: prod.nom,
+                                commercial: prod.nom,
+                                concentration: prod.concentration,
+                                unit: prod.unit || 'mg/mL',
+                                dose: 0,
+                                dose_unit: 'mg/kg',
+                                dose_min: 0,
+                                dose_max: 0,
+                                route: prod.route || 'IM',
+                                phase: 'prémédication',
+                                optional: false,
+                                code_central: prod.gtin  // GTIN au lieu de code_central
+                            });
+                            document.body.removeChild(dialog);
+                            window.renderConfigEditor(tabName, category, index);
+                        };
+                        productsList.appendChild(btn);
                     });
-                    window.renderConfigEditor(tabName, category, index);
+
+                    dialogContent.appendChild(productsList);
+
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'btn btn-secondary';
+                    closeBtn.style.width = '100%';
+                    closeBtn.style.marginTop = '16px';
+                    closeBtn.textContent = 'Annuler';
+                    closeBtn.onclick = () => document.body.removeChild(dialog);
+                    dialogContent.appendChild(closeBtn);
+
+                    dialog.appendChild(dialogContent);
+                    dialog.onclick = (e) => {
+                        if (e.target === dialog) document.body.removeChild(dialog);
+                    };
+                    document.body.appendChild(dialog);
                 };
                 section.appendChild(addBtn);
                 editorEl.appendChild(section);

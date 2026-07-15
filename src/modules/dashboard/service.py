@@ -217,6 +217,40 @@ class DashboardService:
             }
 
     @classmethod
+    async def get_injectable_products(cls) -> dict[str, Any]:
+        """Récupère les produits injectables depuis l'ERP.
+
+        Returns:
+            Dict avec liste des produits injectables (code_gtin, nom, concentration, unit).
+        """
+        try:
+            async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
+                response = await client.get(
+                    f"{cls.ERP_BASE_URL}/produits",
+                    params={"type": "injectable", "limit": 500},
+                )
+                response.raise_for_status()
+                data: Any = response.json()
+
+                products = []
+                for prod in data.get("produits", []):
+                    products.append(
+                        {
+                            "gtin": prod.get("code_gtin"),
+                            "nom": prod.get("nom"),
+                            "concentration": prod.get("concentration"),
+                            "unit": prod.get("unit", "mg/mL"),
+                            "dosage": prod.get("dosage"),
+                            "route": prod.get("voie_admin", "IM"),
+                        }
+                    )
+
+                return {"success": True, "products": products}
+        except Exception as e:
+            logger.warning(f"Failed to get injectable products: {e}")
+            return {"success": False, "error": str(e), "products": []}
+
+    @classmethod
     async def create_ordonnance(
         cls,
         animal_id: int,

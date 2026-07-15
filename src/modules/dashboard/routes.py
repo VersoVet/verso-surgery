@@ -256,6 +256,16 @@ async def get_drugs() -> dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
+@router.get("/injectable-products")
+async def get_injectable_products() -> dict[str, Any]:
+    """Récupère les produits injectables disponibles depuis l'ERP.
+
+    Returns:
+        Dict avec liste des produits (gtin, nom, concentration, unit, route).
+    """
+    return await DashboardService.get_injectable_products()
+
+
 @router.post("/config/{config_name}")
 async def update_config(config_name: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Met à jour un fichier de configuration JSON.
