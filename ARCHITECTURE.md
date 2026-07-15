@@ -78,12 +78,13 @@ FastAPI (port 8112)
   3. Créer ordonnance dans VetoPartner (via /create-ordonnance)
   4. Ordonnance créée avec delivered=1 (médicaments dispensés immédiatement)
 
-### 5. **dashboard** — Interface web 5-step wizard
+### 5. **dashboard** — Interface web 5-step wizard + Configuration
 
 - **Service**: `DashboardService`
   - Proxy vers erp-connector pour RDV, patients, animaux, sites, vétérinaires
   - Utilise la lib `erp-ui-sdk` pour les services (SiteService, VetService, AppointmentService, PatientService)
   - Gestion des consultations
+  - Gestion des configurations JSON (acts, protocols, protocoles_suivi, presets)
   - Proxy endpoints: /sites, /vets, /appointments, /search, /animals, /consultations
 
 - **Routes**:
@@ -92,7 +93,11 @@ FastAPI (port 8112)
   - `GET /api/dashboard/appointments?date_from=...&date_to=...&site_id=...` — RDV par date/site/vét (via erp-ui-sdk)
   - `GET /api/dashboard/search?q=` — Recherche patient/animal
   - `GET /api/dashboard/animal/{id}` — Détails animal
-  - `GET /api/dashboard/acts` — Charge acts.json (5 actes)
+  - `GET /api/dashboard/acts` — Charge acts.json (6 actes)
+  - `GET /api/dashboard/presets?act_id=` — Charge presets.json par acte
+  - `GET /api/dashboard/drugs` — Liste des anesthésiques disponibles (depuis protocoles_suivi.json)
+  - `GET /api/dashboard/config/{name}` — Charge config JSON (acts, protocols, protocoles_suivi, presets)
+  - `POST /api/dashboard/config/{name}` — Sauvegarde config JSON modifiée
   - `POST /api/dashboard/consultation` — Crée consultation VetoPartner (synthese, motif, veto_id, site_id)
   - `POST /api/dashboard/ordonnance` — Crée ordonnance VetoPartner (animal_id, lignes, veto_id, site_id)
   - `GET /dashboard` → `static/index.html`
@@ -131,7 +136,26 @@ FastAPI (port 8112)
   - Ajout dose_min, dose_max, optional, code_central
   - Fourchettes: Médétomidine 0.01–0.04, Kétamine 3–8, Butorphanol 0.2–0.4, etc.
 
-### 6. **suivi** — Dashboard de suivi journalier
+### 6. **animal_memory** — Mémoire persistante des traitements
+
+- **Storage**: SQLite (`verso_surgery.db`)
+  - Table: `animal_treatments(animal_id, appointment_id, date, act_id, act_name, fields_json)`
+  - Index: `(animal_id, act_id)` pour requêtes rapides
+  - Idempotent: UNIQUE(appointment_id, act_id)
+
+- **Service**: `AnimalMemoryService`
+  - `get_last_session(animal_id, act_id)` — Récupère dernière séance pour un acte
+  - `update_animal_memory(animal_id, actes, appointment_id)` — Enregistre les actes après validation
+
+- **Routes**:
+  - `GET /api/animal-memory/{animal_id}/last-session?act_id=` — Dernière séance
+
+- **Use Case**: 
+  - Vétérinaire fait séance 1 d'onde de choc → enregistré en DB
+  - Séance 2 quelques semaines plus tard → précharge les paramètres de séance 1
+  - Auto-incrément num_seance (1 → 2 → 3)
+
+### 7. **suivi** — Dashboard de suivi journalier
 
 - **Service**: `SuiviService`
   - Gère le workflow 4 étapes: Arrivée → Anesthésie → Actes → Sortie
@@ -140,6 +164,7 @@ FastAPI (port 8112)
   - Génération de compte-rendu structuré (format CRLF)
   - Création ordonnance anesthésique (étape 2)
   - Création consultation VetoPartner (étape 4)
+  - Mise à jour animal_memory après validation des actes (non-bloquant)
 
 - **Routes** (Préfixe `/api/suivi`):
   - `GET /protocoles` — Liste des 3 protocoles anesthésiques suivi
@@ -159,17 +184,31 @@ FastAPI (port 8112)
   - `routes.py`: Routes FastAPI (< 200 lignes)
 
 - **Frontend** (`static/suivi.html`):
-  - Vanilla JS, ~900 lignes
+  - Vanilla JS, ~1400 lignes
   - Timeline avec 4 étapes (dots: pending/done/current)
   - Modal Anesthésie: 3 tabs protocolos, calcul automatique doses, volumes éditables
-  - Modal Actes: sélection multi-actes avec formulaires dynamiques
+  - Modal Actes: sélection multi-actes avec formulaires dynamiques + mémoire animal (précharge séance précédente)
   - Modal Sortie: CR éditable avec aperçu avant création
+  - Modal Configuration: Édition structurée des 4 catégories (Acts, Protocols, Anesthésie, Présets)
+    - Formulaires dynamiques (pas d'édition texte JSON)
+    - Gestion des drogues (add/remove) pour protocoles
+    - Ajout/suppression d'éléments
+    - Validation avant sauvegarde
+  - Sélecteur vétérinaire persisté en cookie (365 jours)
   - Auto-refresh toutes les 30s
 
-- **Protocoles** (`protocoles_suivi.json`):
-  - 3 protocoles: Sédation légère / Sédation profonde / Anesthésie gazeuse
-  - Chaque drogue: dose, dose_min, dose_max, code_central (pour ordonnance ERP)
-  - Drugs fournis: SEDATOR 83453, TORPHASOL 55052, ANTIDOR 23569, PROPOMITOR 14760, KETAMIDOR 42438, DIAZEDOR 10576
+- **Protocoles** (`protocols.json` + `protocoles_suivi.json`):
+  - `protocols.json`: Version générique (code_central: null) — template de base
+  - `protocoles_suivi.json`: Version ERP (code_central: réels) — utilisée pour doses + ordonnances
+  - 5-6 protocoles: Sédation légère / profonde / MK Standard / Propofol TIVA / Alpha-2+Morphinique / Chat MK Félin
+  - Chaque drogue: dose, dose_min, dose_max, concentration, route, phase, optional, code_central
+  - Drugs disponibles: SEDATOR 83453, TORPHASOL 55052, ANTIDOR 23569, PROPOMITOR 14760, KETAMIDOR 42438, etc.
+
+- **Présets par zone** (`presets.json`):
+  - Catégories: onde_de_choc, ultrason
+  - Chaque zone: nom, paramètres spécifiques (fréquence, pression, nb_coups, intensité, mode, durée)
+  - Permet pré-remplissage rapide du formulaire actes (1 clic pour appliquer les params)
+  - 5 zones pour ODC, 4 pour ultrason (épaule, carpe, tarse, tendon suspenseur)
 
 - **Workflow**:
   1. **Arrivée**: Créer tracking initial (animal info, poids, client)
@@ -261,27 +300,33 @@ FastAPI (port 8112)
 
 ## Tailles de fichiers
 
-- `src/main.py`: ~210 lignes ✓
-- `src/models.py`: ~180 lignes ✓
+- `src/main.py`: ~250 lignes ✓
+- `src/models.py`: ~200 lignes ✓
 - `src/modules/protocols/service.py`: ~97 lignes ✓
 - `src/modules/animals/service.py`: ~82 lignes ✓
 - `src/modules/surgeries/service.py`: ~110 lignes ✓
 - `src/modules/prescriptions/service.py`: ~172 lignes ✓
-- `src/modules/dashboard/service.py`: ~260 lignes (avec create_ordonnance, create_consultation) ✓
-- `src/modules/dashboard/routes.py`: ~190 lignes ✓
+- `src/modules/dashboard/service.py`: ~260 lignes ✓
+- `src/modules/dashboard/routes.py`: ~265 lignes (+ endpoints config/drugs) ✓
+- `src/modules/animal_memory/store.py`: ~70 lignes ✓
+- `src/modules/animal_memory/service.py`: ~70 lignes ✓
+- `src/modules/animal_memory/routes.py`: ~35 lignes ✓
 - `src/modules/suivi/store.py`: ~100 lignes ✓
 - `src/modules/suivi/formatter.py`: ~80 lignes ✓
-- `src/modules/suivi/service.py`: ~295 lignes ✓
+- `src/modules/suivi/service.py`: ~380 lignes (+ update_animal_memory) ✓
 - `src/modules/suivi/routes.py`: ~170 lignes ✓
 - `src/modules/suivi/tests/test_suivi.py`: ~10 lignes ✓
 - `static/index.html`: ~1225 lignes (vanilla JS, 5-step wizard) ✓
-- `static/suivi.html`: ~900 lignes (vanilla JS, timeline 4 étapes) ✓
-- `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, aucune dépendance) ✓
+- `static/suivi.html`: ~1400 lignes (vanilla JS, timeline 4 étapes + config modal) ✓
+- `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, no deps) ✓
 - `protocoles_suivi.json`: ~400 lignes ✓
-- Routes: <200 lignes chacune ✓
+- `protocols.json`: ~320 lignes ✓
+- `acts.json`: ~390 lignes ✓
+- `presets.json`: ~80 lignes ✓
+- Routes: <300 lignes chacune ✓
 
-Tous les fichiers Python < 300 lignes (validations Forge).
-Tous les fichiers JSON (protocols.json, acts.json) < 2KB.
+Tous les fichiers Python < 400 lignes (validations Forge).
+Tous les fichiers JSON < 10KB.
 JavaScript: vanilla (pas de frameworks), no dependencies.
 
 ## Qualité Code
