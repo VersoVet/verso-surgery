@@ -933,6 +933,157 @@ curl -X PUT "http://10.0.0.13:8112/api/surgeries/surg_001/notes?notes=Animal%20c
 
 ---
 
+## Configuration (Admin Panel)
+
+### GET /api/dashboard/config/{config_name}
+Récupère le contenu d'un fichier de configuration JSON.
+
+**Paramètres**:
+- `config_name` (path): Nom du fichier (acts, protocols, protocoles_suivi, presets)
+
+**Exemple**:
+```bash
+curl "http://10.0.0.44:8112/api/dashboard/config/acts"
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "config": "acts",
+  "data": [
+    {
+      "id": "fluoroscopie_sedation",
+      "name": "Fluoroscopie — Sédation",
+      "icon": "📷",
+      "description": "Imagerie sous sédation...",
+      "fields": [...]
+    }
+  ]
+}
+```
+
+### POST /api/dashboard/config/{config_name}
+Sauvegarde un fichier de configuration JSON modifié.
+
+**Paramètres**:
+- `config_name` (path): Nom du fichier (acts, protocols, protocoles_suivi, presets)
+- Body: `{ "data": {...} }`
+
+**Exemple**:
+```bash
+curl -X POST "http://10.0.0.44:8112/api/dashboard/config/acts" \
+  -H "Content-Type: application/json" \
+  -d '{"data": [...]}'
+```
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "config": "acts",
+  "message": "acts.json mis à jour avec succès"
+}
+```
+
+### GET /api/dashboard/drugs
+Récupère la liste des anesthésiques disponibles depuis protocoles_suivi.json.
+
+**Réponse** (200):
+```json
+{
+  "success": true,
+  "drugs": [
+    {
+      "name": "Médétomidine",
+      "commercial": "SEDATOR",
+      "code_central": "83453",
+      "concentration": 1.0,
+      "unit": "mg/mL"
+    },
+    {
+      "name": "Butorphanol",
+      "commercial": "TORPHASOL",
+      "code_central": "55052",
+      "concentration": 10.0,
+      "unit": "mg/mL"
+    }
+  ]
+}
+```
+
+### GET /api/dashboard/presets
+Récupère les présets de zones par acte.
+
+**Paramètres**:
+- `act_id` (query, optionnel): Filtre par ID d'acte (onde_de_choc, ultrason)
+
+**Exemple**:
+```bash
+curl "http://10.0.0.44:8112/api/dashboard/presets?act_id=onde_de_choc"
+```
+
+**Réponse** (200):
+```json
+{
+  "presets": {
+    "onde_de_choc": [
+      {
+        "zone": "Épaule — Insertion bicipitale",
+        "params": {
+          "frequence": 4,
+          "pression": 1.5,
+          "nb_coups": 2000
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Mémoire Animal (SQLite)
+
+### GET /api/animal-memory/{animal_id}/last-session
+Récupère la dernière séance d'un animal pour un acte spécifique.
+
+**Paramètres**:
+- `animal_id` (path): ID de l'animal (VetoPartner)
+- `act_id` (query): ID de l'acte
+
+**Exemple**:
+```bash
+curl "http://10.0.0.44:8112/api/animal-memory/21892/last-session?act_id=onde_de_choc"
+```
+
+**Réponse** (200) — Séance trouvée:
+```json
+{
+  "found": true,
+  "session": {
+    "date": "2026-07-10",
+    "num_seance": 1,
+    "act_name": "Onde de Choc — Traitement",
+    "fields": {
+      "localisation": "Épaule",
+      "frequence": 4,
+      "pression": 1.5,
+      "nb_coups": 2000
+    }
+  }
+}
+```
+
+**Réponse** (200) — Pas de séance:
+```json
+{
+  "found": false
+}
+```
+
+---
+
 ## Ordonnances Anesthésiques (intégration erp-connector)
 
 ### POST /api/prescriptions/{surgery_id}/create-ordonnance
