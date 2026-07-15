@@ -1631,7 +1631,7 @@
             }
         };
 
-        window.renderConfigEditor = function(tabName, category, index) {
+        window.renderConfigEditor = async function(tabName, category, index) {
             const editorEl = document.getElementById('config-editor-container');
             const data = configState.data[tabName];
 
@@ -1644,8 +1644,8 @@
 
             editorEl.innerHTML = '';
 
-            // Generate form based on item structure
-            const createInput = (key, value, label) => {
+            // Helper to create input field
+            const createInput = (key, value, label, options = {}) => {
                 const group = document.createElement('div');
                 group.className = 'config-form-group';
 
@@ -1653,19 +1653,27 @@
                 labelEl.textContent = label || key;
                 group.appendChild(labelEl);
 
-                const inputEl = document.createElement('input');
-                if (typeof value === 'number') {
+                let inputEl;
+                if (options.type === 'textarea') {
+                    inputEl = document.createElement('textarea');
+                    inputEl.value = value || '';
+                } else if (typeof value === 'number') {
+                    inputEl = document.createElement('input');
                     inputEl.type = 'number';
                     inputEl.step = '0.01';
+                    inputEl.value = value;
                 } else {
+                    inputEl = document.createElement('input');
                     inputEl.type = 'text';
+                    inputEl.value = value || '';
                 }
-                inputEl.value = value;
+
                 inputEl.onchange = (e) => {
+                    const newVal = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
                     if (tabName === 'presets') {
-                        data[category][index][key] = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                        data[category][index][key] = newVal;
                     } else {
-                        data[index][key] = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                        data[index][key] = newVal;
                     }
                 };
                 group.appendChild(inputEl);
@@ -1674,11 +1682,80 @@
 
             // Top level fields
             for (const [key, value] of Object.entries(item)) {
-                if (key === 'fields' || typeof value === 'object') continue;
-                editorEl.appendChild(createInput(key, value, key));
+                if (key === 'fields' || key === 'drugs' || typeof value === 'object') continue;
+                const label = key === 'description' ? 'Description' : key;
+                const options = key === 'description' ? {type: 'textarea'} : {};
+                editorEl.appendChild(createInput(key, value, label, options));
             }
 
-            // Nested object fields (like params in presets)
+            // Special handling: Drugs for anesthesia protocols
+            if (item.drugs && Array.isArray(item.drugs)) {
+                const section = document.createElement('div');
+                section.className = 'config-form-section';
+                section.innerHTML = '<div class="config-form-section-title">Anesthésiques utilisés</div>';
+
+                item.drugs.forEach((drug, dIdx) => {
+                    const drugDiv = document.createElement('div');
+                    drugDiv.style.marginBottom = '12px'; drugDiv.style.paddingBottom = '12px'; drugDiv.style.borderBottom = '1px solid #D1D5DB';
+                    drugDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-size: 11px; color: #6B7280; font-weight: 600;">${drug.commercial || drug.name}</div>
+                        <button style="background: #FEE2E2; color: #991B1B; border: none; padding: 2px 6px; font-size: 11px; border-radius: 3px; cursor: pointer;" onclick="configState.data['${tabName}'][${index}].drugs.splice(${dIdx}, 1); window.renderConfigEditor('${tabName}', '${category}', ${index})">Supprimer</button>
+                    </div>`;
+
+                    const fields = [
+                        { key: 'name', label: 'Nom' },
+                        { key: 'commercial', label: 'Nom commercial' },
+                        { key: 'concentration', label: 'Concentration', type: 'number' },
+                        { key: 'dose', label: 'Dose standard', type: 'number' },
+                        { key: 'dose_min', label: 'Dose min', type: 'number' },
+                        { key: 'dose_max', label: 'Dose max', type: 'number' },
+                        { key: 'route', label: 'Voie d\'administration' },
+                        { key: 'phase', label: 'Phase' },
+                        { key: 'code_central', label: 'Code ERP' }
+                    ];
+
+                    fields.forEach(field => {
+                        const value = drug[field.key];
+                        const g = createInput(field.key, value, field.label);
+                        g.querySelector('input').onchange = (e) => {
+                            const v = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                            data[index].drugs[dIdx][field.key] = v;
+                        };
+                        drugDiv.appendChild(g);
+                    });
+
+                    section.appendChild(drugDiv);
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn btn-small';
+                addBtn.style.width = '100%';
+                addBtn.style.marginTop = '8px';
+                addBtn.style.background = '#10B981';
+                addBtn.style.color = 'white';
+                addBtn.textContent = '+ Ajouter anesthésique';
+                addBtn.onclick = () => {
+                    data[index].drugs.push({
+                        name: 'Nouveau',
+                        commercial: '',
+                        concentration: 1.0,
+                        unit: 'mg/mL',
+                        dose: 0,
+                        dose_unit: 'mg/kg',
+                        dose_min: 0,
+                        dose_max: 0,
+                        route: 'IM',
+                        phase: 'prémédication',
+                        optional: false,
+                        code_central: ''
+                    });
+                    window.renderConfigEditor(tabName, category, index);
+                };
+                section.appendChild(addBtn);
+                editorEl.appendChild(section);
+            }
+
+            // Special handling: Params for presets (zones)
             if (item.params) {
                 const section = document.createElement('div');
                 section.className = 'config-form-section';
@@ -1704,7 +1781,7 @@
                             const check = document.createElement('input');
                             check.type = 'checkbox';
                             check.checked = value;
-                            check.onchange = (e) => { item.fields[fIdx][key] = e.target.checked; };
+                            check.onchange = (e) => { data[index].fields[fIdx][key] = e.target.checked; };
                             const label = document.createElement('label');
                             label.style.display = 'flex'; label.style.alignItems = 'center'; label.style.gap = '6px';
                             label.appendChild(check);
@@ -1714,6 +1791,21 @@
                             fieldDiv.appendChild(createInput(key, value, key));
                         }
                     }
+                    fieldDiv.appendChild(
+                        (() => {
+                            const btn = document.createElement('button');
+                            btn.className = 'btn btn-small';
+                            btn.style.background = '#FEE2E2';
+                            btn.style.color = '#991B1B';
+                            btn.style.marginTop = '8px';
+                            btn.textContent = 'Supprimer champ';
+                            btn.onclick = () => {
+                                data[index].fields.splice(fIdx, 1);
+                                window.renderConfigEditor(tabName, category, index);
+                            };
+                            return btn;
+                        })()
+                    );
                     section.appendChild(fieldDiv);
                 });
                 editorEl.appendChild(section);
@@ -1724,18 +1816,36 @@
             const tab = configState.currentTab;
             const data = configState.data[tab];
 
-            let newItem;
-            if (tab === 'acts') {
-                newItem = { id: 'new_act', name: 'Nouvel acte', icon: '📝', description: '', fields: [] };
-            } else if (tab === 'protocols') {
-                newItem = { id: 'new_protocol', name: 'Nouveau protocole', drugs: [] };
-            } else if (tab === 'protocoles_suivi') {
-                newItem = { id: 'new_suivi', name: 'Nouveau protocole suivi', drugs: [] };
-            }
-
-            if (newItem) {
-                data.push(newItem);
+            if (tab === 'presets') {
+                // For presets, ask which category
+                const categories = Object.keys(data);
+                const choice = prompt(`Catégorie (${categories.join(', ')}):`);
+                if (!choice || !categories.includes(choice)) {
+                    alert('Catégorie invalide');
+                    return;
+                }
+                const newZone = {
+                    zone: 'Nouvelle zone',
+                    params: choice === 'onde_de_choc'
+                        ? { frequence: 4, pression: 1.5, nb_coups: 2000 }
+                        : { frequence_mhz: '1', intensite: 1.0, mode: 'pulse', duree_min: 5 }
+                };
+                data[choice].push(newZone);
                 window.renderConfigTab(tab);
+            } else {
+                let newItem;
+                if (tab === 'acts') {
+                    newItem = { id: 'new_act_' + Date.now(), name: 'Nouvel acte', icon: '📝', description: '', fields: [] };
+                } else if (tab === 'protocols') {
+                    newItem = { id: 'new_protocol_' + Date.now(), name: 'Nouveau protocole', description: '', species: ['chien'], drugs: [] };
+                } else if (tab === 'protocoles_suivi') {
+                    newItem = { id: 'new_suivi_' + Date.now(), name: 'Nouveau protocole suivi', description: '', species: ['chien'], drugs: [] };
+                }
+
+                if (newItem) {
+                    data.push(newItem);
+                    window.renderConfigTab(tab);
+                }
             }
         };
 

@@ -224,6 +224,38 @@ async def get_config(config_name: str) -> dict[str, Any]:
         return {"error": f"JSON invalide: {str(e)}", "status": 400}
 
 
+@router.get("/drugs")
+async def get_drugs() -> dict[str, Any]:
+    """Récupère la liste des drogues anesthésiques disponibles.
+
+    Returns:
+        Dict avec liste des drogues (nom, code_central, concentration, unit, min/max/optimal).
+    """
+    # Charger les drogues depuis protocoles_suivi.json (qui contient les codes ERP)
+    try:
+        protocols_file = Path(__file__).parent.parent.parent.parent / "protocoles_suivi.json"
+        with open(protocols_file) as f:
+            protocols = json.load(f)
+
+        # Extraire les drogues uniques avec leurs infos
+        drugs_dict = {}
+        for protocol in protocols:
+            for drug in protocol.get("drugs", []):
+                key = drug.get("code_central") or drug.get("name")
+                if key not in drugs_dict:
+                    drugs_dict[key] = {
+                        "name": drug.get("name"),
+                        "commercial": drug.get("commercial"),
+                        "code_central": drug.get("code_central"),
+                        "concentration": drug.get("concentration"),
+                        "unit": drug.get("unit"),
+                    }
+
+        return {"success": True, "drugs": list(drugs_dict.values())}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @router.post("/config/{config_name}")
 async def update_config(config_name: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Met à jour un fichier de configuration JSON.
