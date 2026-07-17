@@ -882,10 +882,17 @@
         async function apiFetch(url, opts = {}) {
             try {
                 const response = await fetch(url, opts);
-                return await response.json();
+                const data = await response.json();
+                if (!response.ok) {
+                    const msg = data.detail
+                        ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail))
+                        : `HTTP ${response.status}`;
+                    return { success: false, error: msg };
+                }
+                return data;
             } catch (e) {
                 console.error('API error:', e);
-                return { error: String(e) };
+                return { success: false, error: String(e) };
             }
         }
 
@@ -1126,6 +1133,16 @@
             ).join('');
 
             document.getElementById('modal-anesthesie').classList.add('open');
+
+            // Auto-sélectionner le premier protocole
+            if (state.protocols.length > 0) {
+                const firstBtn = tabsContainer.querySelector('.tab-btn');
+                if (firstBtn) {
+                    firstBtn.classList.add('active');
+                    state.selectedProtocolId = state.protocols[0].id;
+                    window.updateDosesTable();
+                }
+            }
         }
 
         window.selectProtocol = function(protocolId) {
@@ -1199,6 +1216,14 @@
         }
 
         window.validateAnesthesie = async function() {
+            if (!state.selectedProtocolId) {
+                alert('Veuillez sélectionner un protocole');
+                return;
+            }
+            if (!state.currentAppointmentId) {
+                alert('Aucun rendez-vous sélectionné');
+                return;
+            }
             const weight = parseFloat(document.getElementById('anesth-weight').value);
             if (!weight || weight <= 0) {
                 alert('Poids invalide');
