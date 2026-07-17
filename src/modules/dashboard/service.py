@@ -217,37 +217,40 @@ class DashboardService:
             }
 
     @classmethod
-    async def get_injectable_products(cls) -> dict[str, Any]:
-        """Récupère les produits injectables depuis l'ERP.
+    async def search_erp_products(cls, search: str = "") -> dict[str, Any]:
+        """Recherche des produits dans l'ERP.
+
+        Args:
+            search: Terme de recherche (designation du produit).
 
         Returns:
-            Dict avec liste des produits injectables (code_gtin, nom, concentration, unit).
+            Dict avec liste des produits ERP (id, designation, codecentrale).
         """
         try:
             async with httpx.AsyncClient(timeout=cls.TIMEOUT) as client:
+                params: dict[str, Any] = {"limit": 30}
+                if search:
+                    params["search"] = search
                 response = await client.get(
                     f"{cls.ERP_BASE_URL}/produits",
-                    params={"type": "injectable", "limit": 500},
+                    params=params,
                 )
                 response.raise_for_status()
                 data: Any = response.json()
 
                 products = []
-                for prod in data.get("produits", []):
+                for prod in data.get("products", []):
                     products.append(
                         {
-                            "gtin": prod.get("code_gtin"),
-                            "nom": prod.get("nom"),
-                            "concentration": prod.get("concentration"),
-                            "unit": prod.get("unit", "mg/mL"),
-                            "dosage": prod.get("dosage"),
-                            "route": prod.get("voie_admin", "IM"),
+                            "id": prod.get("id"),
+                            "designation": prod.get("designation", ""),
+                            "code_central": prod.get("codecentrale", ""),
                         }
                     )
 
                 return {"success": True, "products": products}
         except Exception as e:
-            logger.warning(f"Failed to get injectable products: {e}")
+            logger.warning(f"Failed to search ERP products: {e}")
             return {"success": False, "error": str(e), "products": []}
 
     @classmethod

@@ -817,8 +817,7 @@
                 <!-- Tabs -->
                 <div class="config-tabs">
                     <button class="config-tab-btn active" onclick="window.switchConfigTab(event, 'acts')">📋 Actes</button>
-                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'protocols')">🏥 Protocoles</button>
-                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'protocoles_suivi')">💉 Anesthésie</button>
+                    <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'protocoles_suivi')">💉 Protocoles Anesthésie</button>
                     <button class="config-tab-btn" onclick="window.switchConfigTab(event, 'presets')">📍 Présets</button>
                 </div>
 
@@ -1590,6 +1589,73 @@
             configState.selectedItemIndex = null;
         };
 
+        window.openErpProductSelector = function(onSelect) {
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+
+            const dialogContent = document.createElement('div');
+            dialogContent.style.cssText = 'background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 70vh; display: flex; flex-direction: column;';
+
+            const title = document.createElement('h3');
+            title.textContent = 'Rechercher un produit ERP';
+            title.style.marginBottom = '12px';
+            dialogContent.appendChild(title);
+
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Tapez pour rechercher (ex: SEDATOR, TORPHASOL...)';
+            searchInput.style.cssText = 'width: 100%; padding: 8px 12px; border: 1px solid #D1D5DB; border-radius: 6px; margin-bottom: 12px; font-size: 13px; box-sizing: border-box;';
+            dialogContent.appendChild(searchInput);
+
+            const resultsList = document.createElement('div');
+            resultsList.style.cssText = 'flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;';
+            resultsList.innerHTML = '<div style="color: #9CA3AF; font-size: 12px; padding: 20px; text-align: center;">Tapez au moins 3 caractères pour rechercher</div>';
+            dialogContent.appendChild(resultsList);
+
+            let searchTimeout = null;
+            searchInput.oninput = () => {
+                clearTimeout(searchTimeout);
+                const q = searchInput.value.trim();
+                if (q.length < 3) {
+                    resultsList.innerHTML = '<div style="color: #9CA3AF; font-size: 12px; padding: 20px; text-align: center;">Tapez au moins 3 caractères pour rechercher</div>';
+                    return;
+                }
+                resultsList.innerHTML = '<div style="color: #9CA3AF; font-size: 12px; padding: 20px; text-align: center;">Recherche...</div>';
+                searchTimeout = setTimeout(async () => {
+                    const result = await apiFetch(`/api/dashboard/erp-products?search=${encodeURIComponent(q)}`);
+                    resultsList.innerHTML = '';
+                    if (!result.success || !result.products || result.products.length === 0) {
+                        resultsList.innerHTML = '<div style="color: #9CA3AF; font-size: 12px; padding: 20px; text-align: center;">Aucun produit trouvé</div>';
+                        return;
+                    }
+                    result.products.forEach(prod => {
+                        const btn = document.createElement('button');
+                        btn.style.cssText = 'padding: 8px 10px; text-align: left; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer; transition: all 0.15s;';
+                        btn.innerHTML = `<div style="font-weight: 600; font-size: 13px;">${prod.designation}</div><div style="font-size: 11px; color: #6B7280;">Code: ${prod.code_central}</div>`;
+                        btn.onmouseover = () => btn.style.background = '#F3F4F6';
+                        btn.onmouseout = () => btn.style.background = 'white';
+                        btn.onclick = () => {
+                            document.body.removeChild(dialog);
+                            onSelect(prod);
+                        };
+                        resultsList.appendChild(btn);
+                    });
+                }, 300);
+            };
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'btn btn-secondary';
+            closeBtn.style.cssText = 'width: 100%; margin-top: 12px;';
+            closeBtn.textContent = 'Annuler';
+            closeBtn.onclick = () => document.body.removeChild(dialog);
+            dialogContent.appendChild(closeBtn);
+
+            dialog.appendChild(dialogContent);
+            dialog.onclick = (e) => { if (e.target === dialog) document.body.removeChild(dialog); };
+            document.body.appendChild(dialog);
+            searchInput.focus();
+        };
+
         window.switchConfigTab = function(evt, tabName) {
             configState.currentTab = tabName;
             configState.selectedItemIndex = null;
@@ -1748,25 +1814,29 @@
                     const drugDiv = document.createElement('div');
                     drugDiv.style.marginBottom = '12px'; drugDiv.style.paddingBottom = '12px'; drugDiv.style.borderBottom = '1px solid #D1D5DB';
                     drugDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div style="font-size: 11px; color: #6B7280; font-weight: 600;">${drug.commercial || drug.name}</div>
+                        <div style="font-size: 12px; font-weight: 700;">${drug.commercial || drug.name}</div>
                         <button style="background: #FEE2E2; color: #991B1B; border: none; padding: 2px 6px; font-size: 11px; border-radius: 3px; cursor: pointer;" onclick="configState.data['${tabName}'][${index}].drugs.splice(${dIdx}, 1); window.renderConfigEditor('${tabName}', '${category}', ${index})">Supprimer</button>
                     </div>`;
 
-                    const fields = [
-                        { key: 'name', label: 'Nom' },
-                        { key: 'commercial', label: 'Nom commercial' },
+                    // ERP fields (read-only)
+                    const erpInfo = document.createElement('div');
+                    erpInfo.style.cssText = 'background: #F3F4F6; border-radius: 4px; padding: 6px 8px; margin-bottom: 8px; font-size: 11px; color: #6B7280;';
+                    erpInfo.innerHTML = `<span style="font-weight:600;">Produit ERP:</span> ${drug.commercial || drug.name} — code: ${drug.code_central || 'aucun'}`;
+                    drugDiv.appendChild(erpInfo);
+
+                    // Editable fields (posology only)
+                    const editableFields = [
                         { key: 'concentration', label: 'Concentration', unit: drug.unit || 'mg/mL' },
-                        { key: 'unit', label: 'Unité de concentration' },
+                        { key: 'unit', label: 'Unité' },
                         { key: 'dose', label: 'Dose standard', unit: drug.dose_unit || 'mg/kg' },
                         { key: 'dose_min', label: 'Dose min', unit: drug.dose_unit || 'mg/kg' },
                         { key: 'dose_max', label: 'Dose max', unit: drug.dose_unit || 'mg/kg' },
                         { key: 'dose_unit', label: 'Unité de dose' },
                         { key: 'route', label: 'Voie d\'administration' },
                         { key: 'phase', label: 'Phase' },
-                        { key: 'code_central', label: 'GTIN/Code ERP' }
                     ];
 
-                    fields.forEach(field => {
+                    editableFields.forEach(field => {
                         const value = drug[field.key];
                         const options = field.unit ? { unit: field.unit } : {};
                         const g = createInput(field.key, value, field.label, options);
@@ -1780,6 +1850,17 @@
                         drugDiv.appendChild(g);
                     });
 
+                    // Optional checkbox
+                    const optLabel = document.createElement('label');
+                    optLabel.style.cssText = 'display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 6px;';
+                    const optCheck = document.createElement('input');
+                    optCheck.type = 'checkbox';
+                    optCheck.checked = !!drug.optional;
+                    optCheck.onchange = (e) => { data[index].drugs[dIdx].optional = e.target.checked; };
+                    optLabel.appendChild(optCheck);
+                    optLabel.appendChild(document.createTextNode('Optionnel (décoché par défaut dans le suivi)'));
+                    drugDiv.appendChild(optLabel);
+
                     section.appendChild(drugDiv);
                 });
 
@@ -1789,74 +1870,25 @@
                 addBtn.style.marginTop = '8px';
                 addBtn.style.background = '#10B981';
                 addBtn.style.color = 'white';
-                addBtn.textContent = '+ Ajouter anesthésique (depuis ERP)';
-                addBtn.onclick = async () => {
-                    // Charger les produits ERP
-                    const result = await apiFetch('/api/dashboard/injectable-products');
-                    if (!result.success || !result.products) {
-                        alert('Erreur: impossible de charger les produits de l\'ERP');
-                        return;
-                    }
-
-                    // Créer un dialogue de sélection
-                    const dialog = document.createElement('div');
-                    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;';
-
-                    const dialogContent = document.createElement('div');
-                    dialogContent.style.cssText = 'background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 70vh; overflow-y: auto;';
-
-                    const title = document.createElement('h3');
-                    title.textContent = 'Sélectionner un produit injectable';
-                    title.style.marginBottom = '16px';
-                    dialogContent.appendChild(title);
-
-                    const productsList = document.createElement('div');
-                    productsList.style.display = 'flex';
-                    productsList.style.flexDirection = 'column';
-                    productsList.style.gap = '8px';
-
-                    result.products.forEach(prod => {
-                        const btn = document.createElement('button');
-                        btn.style.cssText = 'padding: 10px 12px; text-align: left; border: 1px solid #E5E7EB; border-radius: 6px; background: white; cursor: pointer; transition: all 0.2s;';
-                        btn.innerHTML = `<strong>${prod.nom}</strong><br><small>${prod.concentration} ${prod.unit} - ${prod.route}</small>`;
-                        btn.onmouseover = () => btn.style.background = '#F3F4F6';
-                        btn.onmouseout = () => btn.style.background = 'white';
-                        btn.onclick = () => {
-                            data[index].drugs.push({
-                                name: prod.nom,
-                                commercial: prod.nom,
-                                concentration: prod.concentration,
-                                unit: prod.unit || 'mg/mL',
-                                dose: 0,
-                                dose_unit: 'mg/kg',
-                                dose_min: 0,
-                                dose_max: 0,
-                                route: prod.route || 'IM',
-                                phase: 'prémédication',
-                                optional: false,
-                                code_central: prod.gtin  // GTIN au lieu de code_central
-                            });
-                            document.body.removeChild(dialog);
-                            window.renderConfigEditor(tabName, category, index);
-                        };
-                        productsList.appendChild(btn);
+                addBtn.textContent = '+ Ajouter produit (depuis ERP)';
+                addBtn.onclick = () => {
+                    window.openErpProductSelector((product) => {
+                        data[index].drugs.push({
+                            name: product.designation,
+                            commercial: product.designation,
+                            concentration: 0,
+                            unit: 'mg/mL',
+                            dose: 0,
+                            dose_unit: 'mg/kg',
+                            dose_min: 0,
+                            dose_max: 0,
+                            route: 'IM',
+                            phase: 'prémédication',
+                            optional: false,
+                            code_central: product.code_central,
+                        });
+                        window.renderConfigEditor(tabName, category, index);
                     });
-
-                    dialogContent.appendChild(productsList);
-
-                    const closeBtn = document.createElement('button');
-                    closeBtn.className = 'btn btn-secondary';
-                    closeBtn.style.width = '100%';
-                    closeBtn.style.marginTop = '16px';
-                    closeBtn.textContent = 'Annuler';
-                    closeBtn.onclick = () => document.body.removeChild(dialog);
-                    dialogContent.appendChild(closeBtn);
-
-                    dialog.appendChild(dialogContent);
-                    dialog.onclick = (e) => {
-                        if (e.target === dialog) document.body.removeChild(dialog);
-                    };
-                    document.body.appendChild(dialog);
                 };
                 section.appendChild(addBtn);
                 editorEl.appendChild(section);

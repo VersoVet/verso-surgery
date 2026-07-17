@@ -256,14 +256,17 @@ async def get_drugs() -> dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-@router.get("/injectable-products")
-async def get_injectable_products() -> dict[str, Any]:
-    """Récupère les produits injectables disponibles depuis l'ERP.
+@router.get("/erp-products")
+async def search_erp_products(search: str = "") -> dict[str, Any]:
+    """Recherche des produits dans l'ERP.
+
+    Args:
+        search: Terme de recherche (designation du produit).
 
     Returns:
-        Dict avec liste des produits (gtin, nom, concentration, unit, route).
+        Dict avec liste des produits (id, designation, code_central).
     """
-    return await DashboardService.get_injectable_products()
+    return await DashboardService.search_erp_products(search)
 
 
 @router.post("/config/{config_name}")
