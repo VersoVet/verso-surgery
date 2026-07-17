@@ -200,7 +200,7 @@ FastAPI (port 8112)
 - **Protocoles** (`protocols.json` + `protocoles_suivi.json`):
   - `protocols.json`: Version générique (code_central: null) — template de base
   - `protocoles_suivi.json`: Version ERP (code_central: réels) — utilisée pour doses + ordonnances
-  - 5-6 protocoles: Sédation légère / profonde / MK Standard / Propofol TIVA / Alpha-2+Morphinique / Chat MK Félin
+  - 3 protocoles suivi: Sédation légère (SEDATOR+TORPHASOL+PROPOMITOR+ANTIDOR) / Sédation profonde / Anesthésie gazeuse
   - Chaque drogue: dose, dose_min, dose_max, concentration, route, phase, optional, code_central
   - Drugs disponibles: SEDATOR 83453, TORPHASOL 55052, ANTIDOR 23569, PROPOMITOR 14760, KETAMIDOR 42438, etc.
 
@@ -317,7 +317,7 @@ FastAPI (port 8112)
 - `src/modules/suivi/routes.py`: ~170 lignes ✓
 - `src/modules/suivi/tests/test_suivi.py`: ~10 lignes ✓
 - `static/index.html`: ~1225 lignes (vanilla JS, 5-step wizard) ✓
-- `static/suivi.html`: ~1400 lignes (vanilla JS, timeline 4 étapes + config modal) ✓
+- `static/suivi.html`: ~1450 lignes (vanilla JS, timeline 4 étapes + config modal) ✓
 - `static/js/erp-patient-selector.js`: ~290 lignes (vanilla JS, no deps) ✓
 - `protocoles_suivi.json`: ~400 lignes ✓
 - `protocols.json`: ~320 lignes ✓
