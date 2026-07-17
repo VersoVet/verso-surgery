@@ -30,8 +30,22 @@
         "dose_max": 0.4,
         "route": "IM ou IV",
         "phase": "analgésie",
-        "optional": true,
+        "optional": false,
         "code_central": "55052"
+      },
+      {
+        "name": "Propofol",
+        "commercial": "PROPOMITOR",
+        "concentration": 10.0,
+        "unit": "mg/mL",
+        "dose": 4.0,
+        "dose_unit": "mg/kg",
+        "dose_min": 2.0,
+        "dose_max": 6.0,
+        "route": "IV lent",
+        "phase": "induction",
+        "optional": true,
+        "code_central": "14760"
       },
       {
         "name": "Atipamézole",

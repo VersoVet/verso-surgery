@@ -39,7 +39,7 @@ def format_consultation(tracking: SuiviTracking) -> str:
         actes_section = "ACTES RÉALISÉS:"
         for act in actes_data.get("actes", []):
             act_name = act.get("act_name", "Acte inconnu")
-            actes_section += f"{CRLF}-> {act_name}"
+            actes_section += f"{CRLF}{CRLF}-> {act_name}"
 
             fields = act.get("fields", {})
             for field_id, value in fields.items():
