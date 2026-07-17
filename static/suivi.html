@@ -771,7 +771,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="window.closeModalAnesthesie()">Annuler</button>
-                <button class="btn btn-primary" onclick="window.validateAnesthesie()">✓ Valider & Créer Ordonnance</button>
+                <span id="anesthesie-ordo-warning" style="display:none; color: #B45309; font-size: 12px; font-weight: 600;">⚠️ Ordonnance déjà créée</span>
+                <button class="btn btn-primary" id="btn-validate-anesthesie" onclick="window.validateAnesthesie()">✓ Valider & Créer Ordonnance</button>
             </div>
         </div>
     </div>
@@ -1125,6 +1126,22 @@
             const tracking = state.trackings[appointmentId];
             document.getElementById('anesth-weight').value = tracking?.poids_kg ?? appt?.poids ?? 0;
 
+            // Check if ordonnance already exists
+            const anesthData = tracking?.stages?.anesthesie?.data;
+            const existingOrdoId = anesthData?.ordonnance_id;
+            const warningEl = document.getElementById('anesthesie-ordo-warning');
+            const btnEl = document.getElementById('btn-validate-anesthesie');
+            if (existingOrdoId) {
+                warningEl.style.display = 'inline';
+                warningEl.textContent = `⚠️ Ordonnance #${existingOrdoId} déjà créée`;
+                btnEl.textContent = '✓ Mettre à jour (sans recréer ordonnance)';
+                btnEl.dataset.skipOrdo = 'true';
+            } else {
+                warningEl.style.display = 'none';
+                btnEl.textContent = '✓ Valider & Créer Ordonnance';
+                btnEl.dataset.skipOrdo = 'false';
+            }
+
             // Render protocol tabs
             const tabsContainer = document.getElementById('protocol-tabs');
             tabsContainer.innerHTML = state.protocols.map(p =>
@@ -1133,12 +1150,16 @@
 
             document.getElementById('modal-anesthesie').classList.add('open');
 
-            // Auto-sélectionner le premier protocole
-            if (state.protocols.length > 0) {
-                const firstBtn = tabsContainer.querySelector('.tab-btn');
-                if (firstBtn) {
-                    firstBtn.classList.add('active');
-                    state.selectedProtocolId = state.protocols[0].id;
+            // Auto-sélectionner le protocole précédent ou le premier
+            const previousProtocolId = anesthData?.protocol_id;
+            const defaultProtocolId = previousProtocolId || (state.protocols.length > 0 ? state.protocols[0].id : null);
+            if (defaultProtocolId) {
+                const protocolIdx = state.protocols.findIndex(p => p.id === defaultProtocolId);
+                const targetIdx = protocolIdx >= 0 ? protocolIdx : 0;
+                const targetBtn = tabsContainer.querySelectorAll('.tab-btn')[targetIdx];
+                if (targetBtn) {
+                    targetBtn.classList.add('active');
+                    state.selectedProtocolId = state.protocols[targetIdx].id;
                     window.updateDosesTable();
                 }
             }
@@ -1252,12 +1273,15 @@
                 });
             });
 
+            const skipOrdo = document.getElementById('btn-validate-anesthesie').dataset.skipOrdo === 'true';
+
             const payload = {
                 appointment_id: String(state.currentAppointmentId),
                 protocol_id: state.selectedProtocolId,
                 poids_kg: weight,
                 doses: doses,
                 site_id: state.siteId,
+                skip_ordonnance: skipOrdo,
             };
 
             const result = await apiFetch('/api/suivi/anesthesie', {

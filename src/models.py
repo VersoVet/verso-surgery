@@ -191,6 +191,7 @@ class AnesthesieRequest(BaseModel):
     doses: list[dict[str, Any]]
     veto_id: int | None = None
     site_id: int = 2
+    skip_ordonnance: bool = False
 
 
 class ActesRequest(BaseModel):

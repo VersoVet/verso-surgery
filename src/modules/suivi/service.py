@@ -177,22 +177,32 @@ async def process_anesthesie(req: AnesthesieRequest) -> dict[str, Any]:
     if not tracking:
         return {"success": False, "error": "Tracking not found"}
 
-    # Builder les lignes ordonnance
-    lignes = _build_ordonnance_lignes(req.doses)
+    # Vérifier si ordonnance déjà créée
+    existing_ordo_id = None
+    existing_stage = tracking.stages.get("anesthesie")
+    if existing_stage and existing_stage.data:
+        existing_ordo_id = existing_stage.data.get("ordonnance_id")
 
-    # Créer l'ordonnance via DashboardService
-    try:
-        ordo_result = await DashboardService.create_ordonnance(
-            animal_id=tracking.animal_id,
-            lignes=lignes,
-            veto_id=req.veto_id,
-            site_id=req.site_id,
-        )
-        if not ordo_result.get("success"):
-            return {"success": False, "error": f"Ordonnance creation failed: {ordo_result}"}
-    except Exception as e:
-        logger.error(f"Ordonnance creation error: {e}")
-        return {"success": False, "error": str(e)}
+    ordonnance_id = existing_ordo_id
+
+    if not req.skip_ordonnance:
+        # Créer l'ordonnance via DashboardService
+        lignes = _build_ordonnance_lignes(req.doses)
+        try:
+            ordo_result = await DashboardService.create_ordonnance(
+                animal_id=tracking.animal_id,
+                lignes=lignes,
+                veto_id=req.veto_id,
+                site_id=req.site_id,
+            )
+            if not ordo_result.get("success"):
+                return {"success": False, "error": f"Ordonnance creation failed: {ordo_result}"}
+            ordonnance_id = ordo_result.get("ordonnance_id")
+        except Exception as e:
+            logger.error(f"Ordonnance creation error: {e}")
+            return {"success": False, "error": str(e)}
+    else:
+        logger.info(f"Skipping ordonnance creation (already exists: {existing_ordo_id})")
 
     # Sauvegarder dans le tracking
     tracking.current_stage = "anesthesie"
@@ -211,7 +221,7 @@ async def process_anesthesie(req: AnesthesieRequest) -> dict[str, Any]:
             "protocol_name": protocol_name,
             "poids_kg": req.poids_kg,
             "doses": req.doses,
-            "ordonnance_id": ordo_result.get("ordonnance_id"),
+            "ordonnance_id": ordonnance_id,
         },
     )
 
@@ -220,7 +230,7 @@ async def process_anesthesie(req: AnesthesieRequest) -> dict[str, Any]:
     return {
         "success": True,
         "tracking": tracking.model_dump(),
-        "ordonnance_id": ordo_result.get("ordonnance_id"),
+        "ordonnance_id": ordonnance_id,
     }
 
 
